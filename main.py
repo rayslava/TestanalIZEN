@@ -28,6 +28,10 @@ def parsing_args():
 	group.add_argument('-c','--compare',help='compare <> <> <>', required=False, nargs='+')
 	args = parser.parse_args()
 
+	if len(args.build) == 3 and args.build[0] in ['aarch','2','3'] and args.build[1] in ['aarch64','2','3'] and args.build[2] in ['gcc49','2','3']:
+		pass		
+	else:
+		parser.print_help()
 	print args.build
 	###
 
