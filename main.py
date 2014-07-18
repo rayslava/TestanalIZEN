@@ -8,7 +8,9 @@ from parsegcc import *
 from parsellvm import *
 from sh import osc
 import argparse
- 
+
+print "===TestanalIZEN==="
+
 one = parseone()
 one.parse("./one.txt") 
 one.show()
@@ -35,6 +37,7 @@ llvm = parsellvm()
 llvm.parse("./gcc.sum")
 llvm.show()
 
+# parsing args
 parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
 				description='''
 Build utils, run tests and compare results
@@ -54,7 +57,10 @@ group.add_argument('-c','--compare',help='compare <> <> <>', required=False, nar
 args = parser.parse_args()
 
 print args.build
+###
 
 class main:
 	def __init__(self):
-		print "===TestanalIZEN==="
+		pass
+	
+print 'eof!'
