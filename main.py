@@ -48,9 +48,9 @@ Examples:
   -c gcc49 aarch64 i586
 				''')
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument('-b','--build', help='build <> <> <>',required=False)
-group.add_argument('-r','--runtests',help='run tests <> <> <>', required=False)
-group.add_argument('-c','--compare',help='compare <> <> <>', required=False)
+group.add_argument('-b','--build', help='build <> <> <>',required=False, nargs='+')
+group.add_argument('-r','--runtests',help='run tests <> <> <>', required=False, nargs='+')
+group.add_argument('-c','--compare',help='compare <> <> <>', required=False, nargs='+')
 args = parser.parse_args()
 
 print args.build
