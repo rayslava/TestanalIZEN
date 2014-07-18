@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
+import sys, sh
 from parseone import *
 from parsetwo import *
 from parsepexpect import *
 from parsegcc import *
 from parsellvm import *
-
-print '===TestanalIZEN==='
-
+from sh import osc
+import argparse
+ 
 one = parseone()
 one.parse("./one.txt") 
 one.show()
@@ -33,3 +34,27 @@ print '===LLVM RESULTS==='
 llvm = parsellvm()
 llvm.parse("./gcc.sum")
 llvm.show()
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+				description='''
+Build utils, run tests and compare results
+
+Examples:
+  -b aarch aarch64 gcc49 
+  -r aarch aarch64 gcc49
+  -c gcc49 week ago
+  -c gcc49 31.06.14 14.06.15
+  -c gcc49 gcc48
+  -c gcc49 aarch64 i586
+				''')
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument('-b','--build', help='build <> <> <>',required=False)
+group.add_argument('-r','--runtests',help='run tests <> <> <>', required=False)
+group.add_argument('-c','--compare',help='compare <> <> <>', required=False)
+args = parser.parse_args()
+
+print args.build
+
+class main:
+	def __init__(self):
+		print "===TestanalIZEN==="
