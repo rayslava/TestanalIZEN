@@ -6,8 +6,17 @@ from parsetwo import *
 from parsepexpect import *
 from parsegcc import *
 from parsellvm import *
-from sh import osc
+from sh import osc,cd
 import argparse
+
+repo_list=['aarch','2','3']
+arch_list=['aarch64','2','3']
+package_list=['gcc49','llvm','check']
+PROJECT="devel:arm_toolchain:Mobile:Base"
+PROJECT_e=PROJECT.replace(":","\:")+"/"
+repo=""
+arch=""
+package=""
 
 def parsing_args():
 	parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -28,12 +37,24 @@ def parsing_args():
 	group.add_argument('-c','--compare',help='compare <> <> <>', required=False, nargs='+')
 	args = parser.parse_args()
 
-	if len(args.build) == 3 and args.build[0] in ['aarch','2','3'] and args.build[1] in ['aarch64','2','3'] and args.build[2] in ['gcc49','2','3']:
-		pass		
+	if len(args.build) == 3:
+		repo=args.build[0]
+		arch=args.build[1]
+		package=args.build[2]
+		if repo in repo_list and arch in arch_list and package in package_list: 
+			osc("checkout",PROJECT,package)
+			osc("./",PROJECT_e,package,"build",repo,arch,package)
+		else:
+			parser.print_help()
+
 	else:
 		parser.print_help()
 	print args.build
+	foo()
 	###
+
+def foo():
+	pass
 
 print "===TestanalIZEN==="
 
