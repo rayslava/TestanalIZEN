@@ -19,7 +19,7 @@ PROJECT_e=PROJECT.replace(":","\:")+"/"
 repo=""
 arch=""
 package=""
-
+debug = False
 @contextlib.contextmanager
 def cd(path):
    old_path = os.getcwd()
@@ -46,30 +46,39 @@ def parsing_args():
 	group.add_argument('-b','--build', help='build <> <> <>',nargs='+')
 	group.add_argument('-r','--runtests',help='run tests <> <> <>', nargs='+')
 	group.add_argument('-c','--compare',help='compare <> <> <>', nargs='+')
+	parser.add_argument('-d','--debug',help='debug', action='store_true')
 	args = parser.parse_args()
-
+	if args.debug == True:
+		debug = True
 	if len(args.build) == 3:
+		print 'Osc build request..'
 		repo=args.build[0]
 		arch=args.build[1]
 		package=args.build[2]
 		if repo in repo_list and arch in arch_list and package in package_list: 
-			if os.path.exists(PROJECT+'/'+package):
-				with cd(PROJECT+"/"+package):
-					subprocess.call(["osc", "update"])	
-			else:
-				subprocess.call(["osc", "checkout", PROJECT, package]) 
-			with cd(PROJECT+"/"+package):
-				subprocess.call(["osc", "build", repo, arch])
+			print 'Good input'
+			osc()
 		else:
+			print 'Bad input'
 			parser.print_help()
 	else:
 		parser.print_help()
 	print args.build
-	foo()
 	###
 
-def foo():
-	pass
+def osc():
+	print debug
+        if os.path.exists(PROJECT+'/'+package):
+                with cd(PROJECT+"/"+package):
+                        print "Updating.."
+                        if not debug:
+				subprocess.call(["osc", "update"])
+        else:
+                print "Checkout.."
+                subprocess.call(["osc", "checkout", PROJECT, package])
+        with cd(PROJECT+"/"+package):
+                print "Building.."
+                subprocess.call(["osc", "build", repo, arch])
 
 one = parseone()
 one.parse("./one.txt") 
