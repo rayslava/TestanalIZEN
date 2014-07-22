@@ -55,16 +55,18 @@ class parsing_args:
 		args = parser.parse_args()
 		if args.debug:
 			debug = True
-			print "Debug"
+			print "===Debug==="
+	###Build
 		### OSC build request
 		if len(args.build) == 3:
-			print 'Osc build request..'
+			print '===Osc build request..==='
 			repo=args.build[0]
 			arch=args.build[1]
 			package=args.build[2]
 			if repo in repo_list and arch in arch_list and package in package_list: 
 				print 'Good input'
-				osc()
+				osc_build.checkout()
+				osc_build.build()
 			else:
 				print 'Bad input'
 				parser.print_help()
@@ -72,19 +74,43 @@ class parsing_args:
 			parser.print_help()
 		print args.build
 		###
+	###Run_tests
+	
+
+class build:
+	def __init__(self):
+		pass
+
+class osc_build(build):
+	def _init_(self):
+		super(build, self).__init__()
+	@staticmethod		
+	def checkout():
+		if os.path.exists(PROJECT+'/'+package):
+			print "Package already exists"
+			with cd(PROJECT+"/"+package):
+				if not debug:
+					print "Updating.."
+					subprocess.call(["osc", "update"])
+		else:
+			print "===Checkout..==="
+			subprocess.call(["osc", "checkout", PROJECT, package])
+	def build():
+	        with cd(PROJECT+"/"+package):
+			print "===Building..==="
+			subprocess.call(["osc", "build", repo, arch])
 
 def osc():
-	print debug
         if os.path.exists(PROJECT+'/'+package):
                 with cd(PROJECT+"/"+package):
                         if not debug:
-				print "Updating.."
+				print "===Updating..==="
 				subprocess.call(["osc", "update"])
         else:
-                print "Checkout.."
+                print "===Checkout..==="
                 subprocess.call(["osc", "checkout", PROJECT, package])
         with cd(PROJECT+"/"+package):
-                print "Building.."
+                print "===Building..==="
                 subprocess.call(["osc", "build", repo, arch])
 '''
 one = parseone()
@@ -113,7 +139,7 @@ llvm = parsellvm()
 llvm.parse("./gcc.sum")
 llvm.show()
 '''
-parsing_args_inst = parsing_args()
+parsing_args_inst=parsing_args()
 parsing_args_inst.parse()
 
 class main:
