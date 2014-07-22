@@ -35,6 +35,7 @@ class parsing_args:
 		pass
 	def parse(self):
 		global debug,repo,arch,package
+		build_options=""
 		parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
 						description='''
 		Build utils, run tests and compare results
@@ -52,10 +53,15 @@ class parsing_args:
 		group.add_argument('-r','--runtests',help='run tests <> <> <>', nargs='+')
 		group.add_argument('-c','--compare',help='compare <> <> <>', nargs='+')
 		parser.add_argument('-d','--debug',help='debug', action='store_true')
+		### OSC build option
+		parser.add_argument('--no-verify',dest='build_options',action='append_const',const='--no-verify')
+		parser.add_argument('--clean',dest='build_options',action='append_const',const='--clean')
+		###
 		args = parser.parse_args()
 		if args.debug:
 			debug = True
 			print "===Debug==="
+		if debug:print args
 	###Build
 		### OSC build request
 		if len(args.build) == 3:
@@ -65,8 +71,12 @@ class parsing_args:
 			package=args.build[2]
 			if repo in repo_list and arch in arch_list and package in package_list: 
 				print 'Good input'
+				osc_build_inst=osc_build()
 				osc_build.checkout()
-				osc_build.build()
+				for i in args.build_options:
+					build_options+=i+' '
+				if debug:print build_options
+				osc_build_inst.build(build_options)
 			else:
 				print 'Bad input'
 				parser.print_help()
@@ -95,12 +105,18 @@ class osc_build(build):
 		else:
 			print "===Checkout..==="
 			subprocess.call(["osc", "checkout", PROJECT, package])
-	@staticmethod		
-	def build():
+	def build(self,build_options):
 	        with cd(PROJECT+"/"+package):
 			print "===Building..==="
-			subprocess.call(["osc", "build", repo, arch])
+			subprocess.call(["osc build " + " " + repo + " " + arch + " " + build_options], shell = True)
 
+class run_tests:
+	def _init_(self):
+		pass
+
+class run_gcc49(run_tests):
+	def _init_(self):
+		pass
 '''
 one = parseone()
 one.parse("./one.txt") 
@@ -131,8 +147,4 @@ llvm.show()
 parsing_args_inst=parsing_args()
 parsing_args_inst.parse()
 
-class main:
-	def __init__(self):
-		pass
-	
 print 'eof!'
