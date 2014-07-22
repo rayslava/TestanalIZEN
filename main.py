@@ -34,7 +34,7 @@ class parsing_args:
 	def __init__(self):
 		pass
 	def parse(self):
-		global debug
+		global debug,repo,arch,package
 		parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
 						description='''
 		Build utils, run tests and compare results
@@ -95,6 +95,7 @@ class osc_build(build):
 		else:
 			print "===Checkout..==="
 			subprocess.call(["osc", "checkout", PROJECT, package])
+	@staticmethod		
 	def build():
 	        with cd(PROJECT+"/"+package):
 			print "===Building..==="
