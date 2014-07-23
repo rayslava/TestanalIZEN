@@ -73,7 +73,8 @@ class Build(object):
                 ### OSC build request
 		if len(args.build) == 3:
 		        print '===Osc build request..==='
-			Osc_build()
+			osc_build = Osc_build()
+			osc_build.start()
 		else:
 			argparser.print_help()
 
@@ -85,12 +86,14 @@ class Osc_build(Build):
 		self.repo=args.build[0]
 		self.arch=args.build[1]
 		self.package=args.build[2]
+		if args.build_options:
+			self.build_options=' '.join(args.build_options)
+                if debug:print self.build_options
+
+	def start(self): 
 		if self.repo in repo_list and self.arch in arch_list and self.package in package_list:
 			print 'Good input'
 			self.checkout()
-			if args.build_options:
-				self.build_options=' '.join(args.build_options)
-			if debug:print self.build_options 
 			self.build()
 		else:
 			print 'Bad input'
