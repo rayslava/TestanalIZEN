@@ -11,6 +11,8 @@ import os
 import argparse
 import subprocess
 
+argparser=None
+args=None
 repo_list=['aarch','2','3']
 arch_list=['aarch64','2','3']
 package_list=['gcc49','llvm','check','acl']
@@ -34,9 +36,8 @@ class Parsing_args(object):
 	def __init__(self):
 		pass
 	def parse(self):
-		global debug,repo,arch,package
-		build_options=""
-		parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+		global debug,argparser,args
+		argparser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
 						description='''
 		Build utils, run tests and compare results
 
@@ -48,71 +49,77 @@ class Parsing_args(object):
 		  -c gcc49 gcc48
 		  -c gcc49 aarch64 i586
 						''')
-		group = parser.add_mutually_exclusive_group(required=True)
+		group = argparser.add_mutually_exclusive_group(required=True)
 		group.add_argument('-b','--build', help='build <> <> <>',nargs='+')
-		group.add_argument('-r','--runtests',help='run tests <> <> <>', nargs='+')
+		group.add_argument('-r','--runtests',help='run tests <> <> <>') 
 		group.add_argument('-c','--compare',help='compare <> <> <>', nargs='+')
-		parser.add_argument('-d','--debug',help='debug', action='store_true')
+		argparser.add_argument('-d','--debug',help='debug', action='store_true')
 		### OSC build option
-		parser.add_argument('--no-verify',dest='build_options',action='append_const',const='--no-verify')
-		parser.add_argument('--clean',dest='build_options',action='append_const',const='--clean')
+		argparser.add_argument('--no-verify',dest='build_options',action='append_const',const='--no-verify')
+		argparser.add_argument('--clean',dest='build_options',action='append_const',const='--clean')
 		###
-		args = parser.parse_args()
+		args = argparser.parse_args()
 		if args.debug:
 			debug = True
 			print "===Debug==="
 		if debug:print args
-	###Build
-		### OSC build request
-		if args.build and len(args.build) == 3:
-			print '===Osc build request..==='
-			repo=args.build[0]
-			arch=args.build[1]
-			package=args.build[2]
-			if repo in repo_list and arch in arch_list and package in package_list: 
-				print 'Good input'
-				Osc_build.checkout()
-				if args.build_options:
-					build_options=' '.join(args.build_options)
-				if debug:print build_options
-				Osc_build.build(build_options)
-			else:
-				print 'Bad input'
-				parser.print_help()
-		else:
-			parser.print_help()
-		###
-		print args.build
 	###Run_tests
 		### gcc49 test request
-		if args.runtests and len(args.runtests) == 1:
-			r=Run_tests_gcc49()
+		if args.runtests:
+			pass
+                else:
+                        argparser.print_help()
 		###	
+		print 'runtests args: '
 		print args.runtests
 
 class Build(object):
 	def __init__(self):
 		pass
+	@staticmethod
+	def parse_args():
+		global argparser,args
+                ### OSC build request
+		if len(args.build) == 3:
+		        print '===Osc build request..==='
+			Osc_build()
+		else:
+			argparser.print_help()
 
 class Osc_build(Build):
+	global repo,arch,package
+	build_options=""
 	def __init__(self):
-		super(build, self).__init__()
-	@staticmethod		
-	def checkout():
-		if os.path.exists(PROJECT+'/'+package):
+		super(Build, self).__init__()
+		self.repo=args.build[0]
+		self.arch=args.build[1]
+		self.package=args.build[2]
+		if self.repo in repo_list and self.arch in arch_list and self.package in package_list:
+			print 'Good input'
+			self.checkout()
+			if args.build_options:
+				self.build_options=' '.join(args.build_options)
+			if debug:print self.build_options 
+			self.build()
+		else:
+			print 'Bad input'
+			argparser.print_help()
+
+	def checkout(self):
+		if os.path.exists(PROJECT+'/'+self.package):
 			print "Package already exists"
-			with cd(PROJECT+"/"+package):
+			with cd(PROJECT+"/"+self.package):
 				if not debug:
-					print "Updating.."
+					print "===Updating..==="
 					subprocess.call(["osc", "update"])
 		else:
 			print "===Checkout..==="
-			subprocess.call(["osc", "checkout", PROJECT, package])
-	@staticmethod		
-	def build(build_options):
-	        with cd(PROJECT+"/"+package):
+			subprocess.call(["osc", "checkout", PROJECT, self.package])
+
+	def build(self):
+	        with cd(PROJECT+"/"+self.package):
 			print "===Building..==="
-			subprocess.call(["osc build " + " " + repo + " " + arch + " " + build_options], shell = True)
+			subprocess.call(["osc build " + " " + self.repo + " " + self.arch + " " + self.build_options], shell = True)
 
 class Run_tests(object):
 	def __init__(self):
@@ -121,8 +128,9 @@ class Run_tests(object):
 class Run_tests_gcc49(Run_tests):
 	def __init__(self):
 		super(Run_tests_gcc49, self).__init__()
-		print 'yo'
-
+	@staticmethod
+	def get_log():
+		pass
 '''
 one = parseone()
 one.parse("./one.txt") 
@@ -152,4 +160,6 @@ llvm.show()
 '''
 Parsing_args_inst=Parsing_args()
 Parsing_args_inst.parse()
+if args.build:
+	Build.parse_args()
 print '====finish==='
