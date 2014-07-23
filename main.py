@@ -63,15 +63,6 @@ class Parsing_args(object):
 			debug = True
 			print "===Debug==="
 		if debug:print args
-	###Run_tests
-		### gcc49 test request
-		if args.runtests:
-			pass
-                else:
-                        argparser.print_help()
-		###	
-		print 'runtests args: '
-		print args.runtests
 
 class Build(object):
 	def __init__(self):
@@ -124,6 +115,17 @@ class Osc_build(Build):
 class Run_tests(object):
 	def __init__(self):
 		pass
+        @staticmethod
+        def parse_args():
+		global argparser,args
+		if args.runtests == 'gcc':
+			print '===GCC49 test request==='
+		else:
+			print 'Bad input'
+			argparser.print_help()
+
+		print 'runtests args: '
+		print args.runtests
 
 class Run_tests_gcc49(Run_tests):
 	def __init__(self):
@@ -162,4 +164,7 @@ Parsing_args_inst=Parsing_args()
 Parsing_args_inst.parse()
 if args.build:
 	Build.parse_args()
+if args.runtests:
+	Run_tests.parse_args()
+		
 print '====finish==='
