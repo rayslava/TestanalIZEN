@@ -35,6 +35,9 @@ def cd(path):
 class Parsing_args(object):
 	def __init__(self):
 		pass
+	## TODO parse expand
+	# 
+	#  Just edit description section and add some arguments to the parser 	
 	def parse(self):
 		global debug,argparser,args
 		argparser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -42,7 +45,7 @@ class Parsing_args(object):
 		Build utils, run tests and compare results
 
 		Examples:
-		  -b aarch aarch64 gcc49 '--no-verify --clean' -d 
+		  -b osc 'aarch aarch64 gcc49 --no-verify --clean' -d 
 		  -r gcc49
 		  -c gcc49 week ago
 		  -c gcc49 31.06.14 14.06.15
@@ -50,7 +53,7 @@ class Parsing_args(object):
 		  -c gcc49 aarch64 i586
 						''')
 		group = argparser.add_mutually_exclusive_group(required=True)
-		group.add_argument('-b','--build', help='OSC co&build: -b REPOSITORY ARCH PACKAGE [OPTS]\n',nargs='+')
+		group.add_argument('-b','--build', help="OSC co&build: -b osc 'REPOSITORY ARCH PACKAGE [OPTS]'\n",nargs='+')
 		group.add_argument('-r','--runtests',help='Run tests: -r PACKAGE') 
 		group.add_argument('-c','--compare',help='compare <> <> <>', nargs='+')
 		argparser.add_argument('-d','--debug',help='debug', action='store_true')
@@ -63,6 +66,9 @@ class Parsing_args(object):
 class Build(object):
 	def __init__(self):
 		pass
+	## TODO build expand
+	#
+	#  
 	@staticmethod
 	def parse_args():
 		global argparser,args
@@ -135,6 +141,9 @@ class Osc_build(Build):
 class Run_tests(object):
 	def __init__(self):
 		pass
+        ## TODO build expand
+        #
+        #  	
         @staticmethod
         def parse_args():
 		global argparser,args
