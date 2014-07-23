@@ -30,7 +30,7 @@ def cd(path):
    finally:
        os.chdir(old_path)
 
-class parsing_args:
+class Parsing_args(object):
 	def __init__(self):
 		pass
 	def parse(self):
@@ -64,35 +64,38 @@ class parsing_args:
 		if debug:print args
 	###Build
 		### OSC build request
-		if len(args.build) == 3:
+		if args.build and len(args.build) == 3:
 			print '===Osc build request..==='
 			repo=args.build[0]
 			arch=args.build[1]
 			package=args.build[2]
 			if repo in repo_list and arch in arch_list and package in package_list: 
 				print 'Good input'
-				osc_build_inst=osc_build()
-				osc_build.checkout()
+				Osc_build.checkout()
 				if args.build_options:
 					build_options=' '.join(args.build_options)
 				if debug:print build_options
-				osc_build_inst.build(build_options)
+				Osc_build.build(build_options)
 			else:
 				print 'Bad input'
 				parser.print_help()
 		else:
 			parser.print_help()
-		print args.build
 		###
+		print args.build
 	###Run_tests
-	
+		### gcc49 test request
+		if args.runtests and len(args.runtests) == 1:
+			r=Run_tests_gcc49()
+		###	
+		print args.runtests
 
-class build:
+class Build(object):
 	def __init__(self):
 		pass
 
-class osc_build(build):
-	def _init_(self):
+class Osc_build(Build):
+	def __init__(self):
 		super(build, self).__init__()
 	@staticmethod		
 	def checkout():
@@ -105,18 +108,21 @@ class osc_build(build):
 		else:
 			print "===Checkout..==="
 			subprocess.call(["osc", "checkout", PROJECT, package])
-	def build(self,build_options):
+	@staticmethod		
+	def build(build_options):
 	        with cd(PROJECT+"/"+package):
 			print "===Building..==="
 			subprocess.call(["osc build " + " " + repo + " " + arch + " " + build_options], shell = True)
 
-class run_tests:
-	def _init_(self):
+class Run_tests(object):
+	def __init__(self):
 		pass
 
-class run_gcc49(run_tests):
-	def _init_(self):
-		pass
+class Run_tests_gcc49(Run_tests):
+	def __init__(self):
+		super(Run_tests_gcc49, self).__init__()
+		print 'yo'
+
 '''
 one = parseone()
 one.parse("./one.txt") 
@@ -144,7 +150,6 @@ llvm = parsellvm()
 llvm.parse("./gcc.sum")
 llvm.show()
 '''
-parsing_args_inst=parsing_args()
-parsing_args_inst.parse()
-
-print 'eof!'
+Parsing_args_inst=Parsing_args()
+Parsing_args_inst.parse()
+print '====finish==='
