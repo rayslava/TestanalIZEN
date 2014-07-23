@@ -73,8 +73,8 @@ class parsing_args:
 				print 'Good input'
 				osc_build_inst=osc_build()
 				osc_build.checkout()
-				for i in args.build_options:
-					build_options+=i+' '
+				if args.build_options:
+					build_options=' '.join(args.build_options)
 				if debug:print build_options
 				osc_build_inst.build(build_options)
 			else:
