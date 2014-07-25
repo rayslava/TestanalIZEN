@@ -10,6 +10,7 @@ import contextlib
 import os
 import argparse
 import subprocess
+from sh import cp
 
 argparser=None
 args=None
@@ -152,7 +153,7 @@ class Run_tests(object):
         @staticmethod
         def parse_args():
 		global argparser,args
-		if args.runtests == 'gcc':
+		if args.runtests == 'gcc49':
 			print '===GCC 4.9 test request==='
 			run_tests_gcc49 = Run_tests_gcc49()
 			run_tests_gcc49.start()
@@ -169,9 +170,12 @@ class Run_tests_gcc49(Run_tests):
 	def __init__(self):
 		super(Run_tests_gcc49, self).__init__()
 	
-	@staticmethod
-	def start():
-		pass # TODO
+	def start(self):
+		self.get_results()
+
+	def get_results(self):
+		print '===Getting test results==='
+		cp('/var/tmp/build-root/home/abuild/rpmbuild/BUILD/gcc-4.9.0/testresults/','./testresults','-r')
 
 class Parse(object):
 	def __init__(self):
