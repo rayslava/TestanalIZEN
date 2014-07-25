@@ -200,47 +200,42 @@ class Parse(object):
 			print args.parse
 	
 class Parse_gcc49(Parse):
-	path="./libstdc++.sum"
+	path="./testresults/test_summary.txt"
         pass_cnt = 0
         xpass_cnt = 0
         fail_cnt = 0
         xfail_cnt = 0
         unsupported_cnt= 0
-        error_cnt = 0
-        warning_cnt = 0	
+        unresolved_cnt= 0
         def __init__(self):
                 super(Parse_gcc49, self).__init__()
                 self.pass_cnt = 0
                 self.xpass_cnt = 0
                 self.fail_cnt = 0
                 self.xfail_cnt = 0
-                self.unsupported_cnt= 0
-                self.error_cnt = 0
-                self.warning_cnt = 0
+                self.unsupported_cnt = 0
+                self.unresolved_cnt = 0
 	def start(self):
-                pass_regexp = re.compile('PASS\s*:\s*')
-                xpass_regexp = re.compile('XPASS\s*:\s*')
-                fail_regexp = re.compile('FAIL\s*:\s*')
-                xfail_regexp = re.compile('XFAIL\s*:\s*')
-                unsupported_regexp = re.compile('UNSUPPORTED\s*:\s*')
-                error_regexp = re.compile('ERROR\s*:\s*')
-                warning_regexp = re.compile('WARNING\s*:\s*')
+                pass_regexp = re.compile('(?:# of expected passes\s*)(\d+)')
+                xpass_regexp = re.compile('(?:# of unexpected successes\s*)(\d+)')
+                fail_regexp = re.compile('(?:# of expected failures\s*)(\d+)')
+                xfail_regexp = re.compile('(?:# of unexpected failures\s*)(\d+)')
+                unsupported_regexp = re.compile('(?:# of unsupported tests\s*)(\d+)')
+                unresolved_regexp = re.compile('(?:# of unresolved testcases\s*)(\d+)')
                 with open(self.path) as f:
                         for line in f:
                                 if pass_regexp.match(line):
-                                        self.pass_cnt += 1
+					self.pass_cnt += int(pass_regexp.match(line).group(1))
                                 if fail_regexp.match(line):
-                                        self.fail_cnt += 1
+                                        self.fail_cnt += int(fail_regexp.match(line).group(1)) 
                                 if xpass_regexp.match(line):
-                                        self.xpass_cnt += 1
+                                        self.xpass_cnt += int(xpass_regexp.match(line).group(1))
                                 if fail_regexp.match(line):
-                                        self.xfail_cnt += 1
+                                        self.xfail_cnt += int(fail_regexp.match(line).group(1))
                                 if unsupported_regexp.match(line):
-                                        self.unsupported_cnt += 1
-                                if error_regexp.match(line):
-                                        self.error_cnt += 1
-                                if warning_regexp.match(line):
-                                        self.warning_cnt += 1
+                                        self.unsupported_cnt += int(unsupported_regexp.match(line).group(1))
+				if unresolved_regexp.match(line):
+					self.unresolved_cnt += int(unresolved_regexp.match(line).group(1))
 		self.show()
 	
         def show(self):
@@ -250,8 +245,7 @@ class Parse_gcc49(Parse):
                 print 'XPASS: %d' % self.xpass_cnt
                 print 'XFAIL: %d' % self.xfail_cnt
                 print 'UNSUPPORTED: %d' % self.unsupported_cnt
-                print 'ERROR: %d' % self.error_cnt
-                print 'WARNING: %d' % self.warning_cnt
+                print 'UNRESOLVED: %d' % self.unresolved_cnt
 
 '''
 one = parseone()
