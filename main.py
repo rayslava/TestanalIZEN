@@ -247,33 +247,6 @@ class Parse_gcc49(Parse):
                 print 'UNSUPPORTED: %d' % self.unsupported_cnt
                 print 'UNRESOLVED: %d' % self.unresolved_cnt
 
-'''
-one = parseone()
-one.parse("./one.txt") 
-one.show()
-
-two = parsetwo()
-two.parse("./gcc_res.txt")
-two.show()
-
-two1 = parsetwo()
-two1.parse("./gcc_res1.txt")
-two1.show()
-
-pex = parsepexpect()
-pex.parse("cat","./pex.txt")
-pex.show()
-
-print '===GCC RESULTS==='
-gcc = parsegcc()
-gcc.parse("./libstdc++.sum")
-gcc.show()
-
-print '===LLVM RESULTS==='
-llvm = parsellvm()
-llvm.parse("./gcc.sum")
-llvm.show()
-'''
 Parsing_args_inst=Parsing_args()
 Parsing_args_inst.parse()
 if args.build:
