@@ -68,8 +68,8 @@ class Parsing_args(object):
 		group = argparser.add_mutually_exclusive_group(required=True)
 		group.add_argument('-b','--build', help="OSC co&build: -b osc 'REPOSITORY ARCH PACKAGE [OPTS]'\n",nargs='+')
 		group.add_argument('-r','--runtests',help="Run tests: -r osc 'REPOSITORY ARCH PACKAGE'", nargs = '+') 
-		group.add_argument('-p','--parse',help='Parsing results: -p PACKAGE')
 		group.add_argument('-c','--compare',help='Compare results between A and B(time,repo,aarch,version): -c PACKAGE A B', nargs='+')
+		argparser.add_argument('-p','--parse',help='Parsing results: -p PACKAGE')
 		argparser.add_argument('-d','--debug',help='debug', action='store_true')
 		argparser.add_argument('-e','--erase',help='erase db COLLECTION/COUNT of the oldest documents')
 		args = argparser.parse_args()
@@ -254,7 +254,6 @@ class Parse(object):
 			print args.parse
 	
 class Parse_gcc49(object):
-	path="./testresults/test_summary.txt"
         pass_cnt = 0
         xpass_cnt = 0
         fail_cnt = 0
@@ -275,20 +274,20 @@ class Parse_gcc49(object):
                 xfail_regexp = re.compile('(?:# of unexpected failures\s*)(\d+)')
                 unsupported_regexp = re.compile('(?:# of unsupported tests\s*)(\d+)')
                 unresolved_regexp = re.compile('(?:# of unresolved testcases\s*)(\d+)')
-                with open(self.path) as f:
-                        for line in f:
-                                if pass_regexp.match(line):
-					self.pass_cnt += int(pass_regexp.match(line).group(1))
-                                if fail_regexp.match(line):
-                                        self.fail_cnt += int(fail_regexp.match(line).group(1)) 
-                                if xpass_regexp.match(line):
-                                        self.xpass_cnt += int(xpass_regexp.match(line).group(1))
-                                if fail_regexp.match(line):
-                                        self.xfail_cnt += int(fail_regexp.match(line).group(1))
-                                if unsupported_regexp.match(line):
-                                        self.unsupported_cnt += int(unsupported_regexp.match(line).group(1))
-				if unresolved_regexp.match(line):
-					self.unresolved_cnt += int(unresolved_regexp.match(line).group(1))
+		f = db.read_textfile('gcc49')
+                for line in f:
+			if pass_regexp.match(line):
+				self.pass_cnt += int(pass_regexp.match(line).group(1))
+			if fail_regexp.match(line):
+				self.fail_cnt += int(fail_regexp.match(line).group(1)) 
+			if xpass_regexp.match(line):
+				self.xpass_cnt += int(xpass_regexp.match(line).group(1))
+			if fail_regexp.match(line):
+				self.xfail_cnt += int(fail_regexp.match(line).group(1))
+			if unsupported_regexp.match(line):
+				self.unsupported_cnt += int(unsupported_regexp.match(line).group(1))
+			if unresolved_regexp.match(line):
+				self.unresolved_cnt += int(unresolved_regexp.match(line).group(1))
 		self.show()
 	
         def show(self):
@@ -322,6 +321,14 @@ class MongoHQ(object):
 		collection.insert(text_file_doc)
 		if (debug):	print collection.find_one()
 
+	def read_textfile(self, collection):
+		print '===Reading log file from the database==='
+		collection = self.db[collection]
+                text = ""
+		text = collection.find_one()['contents']
+		text=text.decode("utf-8").split('\n')
+		return text
+
 	def operations(self):
 		self.erase()
 	def erase(self):
@@ -334,7 +341,7 @@ class MongoHQ(object):
                         else:
 				if args.erase in db.collection_list():
 					print "Collection " + args.erase  + " will be deleted after 5 seconds..press Ctrl + C to interrupt"
-					time.sleep(5)
+					time.sleep(1)
 					self.db.drop_collection(args.erase)
 				else:
 					print "Wrong collection"
