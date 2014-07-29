@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
 import sys
-from parseone import *
-from parsetwo import *
-from parsepexpect import *
-from parsegcc import *
-from parsellvm import *
 import contextlib
 import os
 import argparse
 import subprocess
+import re
 from sh import cp
+import datetime
+import pymongo
+from pymongo import MongoClient
 
 argparser=None
 args=None
@@ -22,6 +21,8 @@ PROJECT_e=PROJECT.replace(":","\:")+"/"
 repo=""
 arch=""
 package=""
+compiler=""
+version=""
 debug = False
 
 @contextlib.contextmanager
@@ -32,6 +33,13 @@ def cd(path):
        yield
    finally:
        os.chdir(old_path)
+
+def RepresentsInt(s):
+    try: 
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 class Parsing_args(object):
 	def __init__(self):
@@ -52,6 +60,8 @@ class Parsing_args(object):
 		  -c gcc49 31.06.14 14.06.15
 		  -c gcc49 gcc48
 		  -c gcc49 aarch64 i586
+		  -e my_collection 
+		  -e 100500
 						''')
 		group = argparser.add_mutually_exclusive_group(required=True)
 		group.add_argument('-b','--build', help="OSC co&build: -b osc 'REPOSITORY ARCH PACKAGE [OPTS]'\n",nargs='+')
@@ -59,7 +69,13 @@ class Parsing_args(object):
 		group.add_argument('-p','--parse',help='Parsing results: -p PACKAGE')
 		group.add_argument('-c','--compare',help='compare <> <> <>', nargs='+')
 		argparser.add_argument('-d','--debug',help='debug', action='store_true')
+		argparser.add_argument('-e','--erase',help='erase db COLLECTION/COUNT of the oldest documents')
 		args = argparser.parse_args()
+		if args.erase:
+			if RepresentsInt(args.erase):
+				pass # TODO erase COUNT of the oldest documents
+			else:	
+				pass # TODO erase db COLLECTION
 		if args.debug:
 			debug = True
 			print "===Debug==="
@@ -73,7 +89,6 @@ class Build(object):
 	#  
 	@staticmethod
 	def parse_args():
-		global argparser,args
                 ### OSC build request
 		if args.build[0]=='osc':
 		        print '===Osc build request..==='
@@ -145,14 +160,14 @@ class Osc_build(Build):
 
 
 class Run_tests(object):
+	global package
 	def __init__(self):
-		pass
+		self.package = args.runtests
         ## TODO tests expand
         #
         #  	
         @staticmethod
         def parse_args():
-		global argparser,args
 		if args.runtests == 'gcc49':
 			print '===GCC 4.9 test request==='
 			run_tests_gcc49 = Run_tests_gcc49()
@@ -167,15 +182,19 @@ class Run_tests(object):
 			print args.runtests
 
 class Run_tests_gcc49(Run_tests):
+	global compiler,version
 	def __init__(self):
 		super(Run_tests_gcc49, self).__init__()
+		self.compiler = 'gcc'
+		self.version = '4.9'
 	
 	def start(self):
 		self.get_results()
 
 	def get_results(self):
 		print '===Getting test results==='
-		cp('/var/tmp/build-root/home/abuild/rpmbuild/BUILD/gcc-4.9.0/testresults/','./testresults','-r')
+		cp('/var/tmp/build-root/home/abuild/rpmbuild/BUILD/gcc-4.9.0/testresults/','./testresults','-r') # TODO rm cp, merge with db.add 
+		db.add_textfile("./testresults/test_summary.txt")
 
 class Parse(object):
 	def __init__(self):
@@ -185,7 +204,6 @@ class Parse(object):
 	#	
 	@staticmethod
 	def parse_args():
-		global argparser,args
 		if args.parse == 'gcc49':
 			print '===GCC 4.9 parse request==='
 			parse_gcc49 = Parse_gcc49()
@@ -247,13 +265,60 @@ class Parse_gcc49(Parse):
                 print 'UNSUPPORTED: %d' % self.unsupported_cnt
                 print 'UNRESOLVED: %d' % self.unresolved_cnt
 
+class MongoHQ(object):
+	db = None
+	def __init__(self):
+		MONGO_URL = os.environ.get('MONGOHQ_URL')
+		client = MongoClient(MONGO_URL)
+		self.db = client.ssdb
+				
+	def collection_list(self):
+		print "===Collection list==="
+		return self.db.collection_names()
+	
+	def add_textfile(self,path):
+		print '===Uploading log file to the database==='
+		fname="filename"
+		collection = self.db.kim_collection
+		f = open(path)
+		text = ""
+		text = f.read()
+		#text_file_doc = {fname: path, "contents": text, "date": datetime.date()}
+		text_file_doc = {fname: path, "date": datetime.datetime.now().strftime('%d.%m.%Y'), "time": datetime.datetime.now().strftime('%H:%M:%S'), 'repo': repo, 'aarch': arch, 'package': package, 'compiler': compiler, 'version': version}
+		collection.insert(text_file_doc)
+
+	def operations(self):
+		collection = self.db.kim_collection
+
+		# Get a count of the documents in this collection
+		count = collection.count()
+
+		# Create a document for a monster
+		monster = {"name": "Dracula",
+			   "occupation": "Blood Sucker",
+			   "tags": ["vampire", "teeth", "bat"],
+			   "date": datetime.datetime.utcnow()
+			   }
+
+		# Insert the monster document into the monsters collection
+		monster_id = collection.insert(monster)
+
+		# Print out our monster documents
+		for monster in collection.find():
+		    print monster
+
+		# Query for a particular monster
+		print collection.find_one({"name": "Dracula"})
+
+		
 Parsing_args_inst=Parsing_args()
 Parsing_args_inst.parse()
+db = MongoHQ()
+print db.collection_list()
 if args.build:
 	Build.parse_args()
 if args.runtests:
 	Run_tests.parse_args()
 if args.parse:
 	Parse.parse_args()	
-
 print '====finish==='
