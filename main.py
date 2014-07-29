@@ -6,41 +6,41 @@ import os
 import argparse
 import subprocess
 import re
-from sh import cp
 import datetime
-import pymongo
 from pymongo import MongoClient
 import time
 
-argparser=None
-args=None
-repo_list=['aarch','2','3']
-arch_list=['aarch64','2','3']
-package_list=['gcc49','llvm','check','acl']
-PROJECT="devel:arm_toolchain:Mobile:Base"
-PROJECT_e=PROJECT.replace(":","\:")+"/"
-repo=""
-arch=""
-package=""
-compiler=""
-version=""
+argparser = None
+args = None
+# TODO expand this
+repo_list = ['aarch','2','3']
+arch_list = ['aarch64','2','3']
+package_list = ['gcc49','llvm','check','acl']
+##
+PROJECT = "devel:arm_toolchain:Mobile:Base"
+PROJECT_e = PROJECT.replace(":","\:")+"/"
+repo = ""
+arch = ""
+package = ""
+compiler = ""
+version = ""
 debug = False
 
 @contextlib.contextmanager
 def cd(path):
-   old_path = os.getcwd()
-   os.chdir(path)
-   try:
-       yield
-   finally:
-       os.chdir(old_path)
+	old_path = os.getcwd()
+        os.chdir(path)
+        try:
+                yield
+        finally:
+                os.chdir(old_path)
 
 def RepresentsInt(s):
-    try: 
-        int(s)
-        return True
-    except ValueError:
-        return False
+        try:
+                int(s)
+                return True
+        except ValueError:
+                return False
 
 class Parsing_args(object):
 	def __init__(self):
@@ -50,13 +50,14 @@ class Parsing_args(object):
 	#  Just edit description section and add some arguments to the parser 	
 	def parse(self):
 		global debug,argparser,args
-		argparser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-						description='''
+		argparser = argparse.ArgumentParser(
+			 formatter_class=argparse.RawDescriptionHelpFormatter,
+			 description='''
 		Build utils, run tests and compare results
 
 		Examples:
 		  -b osc 'aarch aarch64 gcc49 --no-verify --clean' -d 
-		  -r gcc49
+		  -r osc 'aarcg aarch64 gcc49'
 		  -c gcc49 week ago
 		  -c gcc49 31.06.14 14.06.15
 		  -c gcc49 gcc48
@@ -66,9 +67,9 @@ class Parsing_args(object):
 						''')
 		group = argparser.add_mutually_exclusive_group(required=True)
 		group.add_argument('-b','--build', help="OSC co&build: -b osc 'REPOSITORY ARCH PACKAGE [OPTS]'\n",nargs='+')
-		group.add_argument('-r','--runtests',help='Run tests: -r PACKAGE') 
+		group.add_argument('-r','--runtests',help="Run tests: -r osc 'REPOSITORY ARCH PACKAGE'", nargs = '+') 
 		group.add_argument('-p','--parse',help='Parsing results: -p PACKAGE')
-		group.add_argument('-c','--compare',help='Compare results between A and B: -c PACKAGE A B', nargs='+')
+		group.add_argument('-c','--compare',help='Compare results between A and B(time,repo,aarch,version): -c PACKAGE A B', nargs='+')
 		argparser.add_argument('-d','--debug',help='debug', action='store_true')
 		argparser.add_argument('-e','--erase',help='erase db COLLECTION/COUNT of the oldest documents')
 		args = argparser.parse_args()
@@ -82,15 +83,16 @@ class Build(object):
 		pass
 	## TODO build expand
 	#
-	#  
+	# add some NON osc build requests 
 	@staticmethod
 	def parse_args():
                 ### OSC build request
 		if args.build[0]=='osc':
 		        print '===Osc build request..==='
-			osc_build = Osc_build()
-			osc_build.start()
+			osc = Build_osc()
+			osc.start()
 		else:
+			print 'Bad input'
 			argparser.print_help()
 			sys.exit(0)
 		
@@ -98,27 +100,27 @@ class Build(object):
 			print 'build args:'
 			print args.build
 
-class Osc_build(Build):
-	global repo,arch,package
+class Build_osc(object):
 	params=""
 	def __init__(self):
-		super(Build, self).__init__()
+		global repo,arch,package
 		self.params = args.build[1]
 		mList = self.params.split(' ')
 		if len(mList) >= 3:
-			self.repo=mList[0]
-			self.arch=mList[1]
-			self.package=mList[2]
+			repo=mList[0]
+			arch=mList[1]
+			package=mList[2]
 			del mList[2]
 			self.params = ' '.join(mList)
 		else:
 			print 'Bad input'
+			argparser.print_help()
 			sys.exit(0)
 
 	def start(self): 
-		if self.repo in repo_list:
-			if self.arch in arch_list:
-				if self.package in package_list:
+		if repo in repo_list:
+			if arch in arch_list:
+				if package in package_list:
 					print 'Good input'
 					self.checkout()
 					self.build()
@@ -139,35 +141,35 @@ class Osc_build(Build):
 			sys.exit(0)
 
 	def checkout(self):
-		if os.path.exists(PROJECT+'/'+self.package):
+		if os.path.exists(PROJECT+'/'+package):
 			print "Package already exists"
-			with cd(PROJECT+"/"+self.package):
+			with cd(PROJECT+"/"+package):
 				if not debug:
 					print "===Updating..==="
 					subprocess.call(["osc", "update"])
 		else:
 			print "===Checkout..==="
-			subprocess.call(["osc", "checkout", PROJECT, self.package])
+			subprocess.call(["osc", "checkout", PROJECT, package])
 
 	def build(self):
-	        with cd(PROJECT+"/"+self.package):
+	        with cd(PROJECT+"/"+package):
 			print "===Building..==="
 			subprocess.call(["osc build " + self.params], shell = True)
 
-
 class Run_tests(object):
-	global package
 	def __init__(self):
-		self.package = args.runtests
+		global package
+		package = args.runtests
         ## TODO tests expand
         #
-        #  	
+        # add some NON osc run tests requests  	
         @staticmethod
         def parse_args():
-		if args.runtests == 'gcc49':
-			print '===GCC 4.9 test request==='
-			run_tests_gcc49 = Run_tests_gcc49()
-			run_tests_gcc49.start()
+		### OSC run tests request
+		if args.runtests[0]=='osc':
+                        print '===Osc run tests request..==='
+                        osc = Run_tests_osc()
+                        osc.start()
 		else:
 			print 'Bad input'
 			argparser.print_help()
@@ -177,20 +179,58 @@ class Run_tests(object):
 			print 'runtests args: '
 			print args.runtests
 
-class Run_tests_gcc49(Run_tests):
-	global compiler,version
+class Run_tests_osc(object):
+	params=""
+	## TODO tests expand
+        #
+        # add new packages in the start method 
 	def __init__(self):
-		super(Run_tests_gcc49, self).__init__()
-		self.compiler = 'gcc'
-		self.version = '4.9'
-	
+        	global repo,arch,package
+                self.params = args.runtests[1]
+                mList = self.params.split(' ')
+                if len(mList) >= 3:
+                        repo=mList[0]
+                        arch=mList[1]
+                        package=mList[2]
+                        del mList[2]
+                        self.params = ' '.join(mList)
+                else:
+                        print 'Bad input'
+			argparser.print_help()
+                        sys.exit(0)
+		
 	def start(self):
-		self.get_results()
+		if repo in repo_list:
+                        if arch in arch_list:
+                                if package in package_list:
+                                        print 'Good input'
+					self.get_results()
+                                else:
+                                        print 'Wrong PACKAGE, package list:'
+                                        print package_list
+                                        argparser.print_help()
+                                        sys.exit(0)
+                        else:
+                                print 'Wrong ARCH, arch list:'
+                                print arch_list
+                                argparser.print_help()
+                                sys.exit(0)
+                else:
+                        print 'Wrong REPOSITORY, REPOSITORY list'
+                        print repo_list
+                        argparser.print_help()
+                        sys.exit(0)
 
 	def get_results(self):
-		print '===Getting test results==='
-		cp('/var/tmp/build-root/home/abuild/rpmbuild/BUILD/gcc-4.9.0/testresults/','./testresults','-r') # TODO rm cp, merge with db.add 
-		db.add_textfile("./testresults/test_summary.txt")
+		global compiler,version
+		if package == 'gcc49':
+			print '===GCC 4.9 test request==='
+			compiler = 'gcc'
+			version = '4.9'
+			db.add_textfile("/var/tmp/build-root/home/abuild/rpmbuild/BUILD/gcc-4.9.0/testresults/test_summary.txt")
+		else:
+			print 'No support for package ' + package
+			print 'DIY: look at the class Run_tests_osc, method get_results'
 
 class Parse(object):
 	def __init__(self):
@@ -213,7 +253,7 @@ class Parse(object):
 			print 'parse agrs'
 			print args.parse
 	
-class Parse_gcc49(Parse):
+class Parse_gcc49(object):
 	path="./testresults/test_summary.txt"
         pass_cnt = 0
         xpass_cnt = 0
@@ -222,7 +262,6 @@ class Parse_gcc49(Parse):
         unsupported_cnt= 0
         unresolved_cnt= 0
         def __init__(self):
-                super(Parse_gcc49, self).__init__()
                 self.pass_cnt = 0
                 self.xpass_cnt = 0
                 self.fail_cnt = 0
@@ -279,8 +318,7 @@ class MongoHQ(object):
 		f = open(path)
 		text = ""
 		text = f.read()
-		#text_file_doc = {fname: path, "contents": text, "date": datetime.date()}
-		text_file_doc = {fname: path, "date": datetime.datetime.now().strftime('%d.%m.%Y'), "time": datetime.datetime.now().strftime('%H:%M:%S'), 'repo': repo, 'aarch': arch, 'package': package, 'compiler': compiler, 'version': version}
+		text_file_doc = {fname: path, "contents": text, "date": datetime.datetime.now().strftime('%d.%m.%Y'), "time": datetime.datetime.now().strftime('%H:%M:%S'), 'repo': repo, 'aarch': arch, 'package': package, 'compiler': compiler, 'version': version}
 		collection.insert(text_file_doc)
 
 	def operations(self):
@@ -290,7 +328,6 @@ class MongoHQ(object):
                         if RepresentsInt(args.erase):# and args.erase < db.users.count:
 				#db.collection.remove()
                                 pass # TODO erase COUNT of the oldest documents
-				# Условия
 				#for user in db.users.find().where('this.name == "user 2" || this.level>3'):
 				#    print user
                         else:
@@ -325,21 +362,25 @@ class Compare(object):
                         print 'compare agrs'
                         print args.compare
 			
-class Compare_gcc49(Compare):
+class Compare_gcc49(object):
         params=""
         def __init__(self): # TODO 
-                super(Build, self).__init__()
+		mList=[]
                 self.params = args.compare[1]
                 if len(mList) >= 3:
-                        self.repo=mList[0]
-                        self.arch=mList[1]
-                        self.package=mList[2]
+                        repo=mList[0]
+                        arch=mList[1]
+                        package=mList[2]
                         del mList[2]
                         self.params = ' '.join(mList)
                 else:
                         print 'Bad input'
+			argparser.print_help()
                         sys.exit(0)
-	
+		
+	def start(self):
+		pass
+		
 Parsing_args_inst=Parsing_args()
 Parsing_args_inst.parse()
 db = MongoHQ()
