@@ -10,6 +10,7 @@ from sh import cp
 import datetime
 import pymongo
 from pymongo import MongoClient
+import time
 
 argparser=None
 args=None
@@ -288,33 +289,24 @@ class MongoHQ(object):
 		collection.insert(text_file_doc)
 
 	def operations(self):
-		collection = self.db.kim_collection
-
-		# Get a count of the documents in this collection
-		count = collection.count()
-
-		# Create a document for a monster
-		monster = {"name": "Dracula",
-			   "occupation": "Blood Sucker",
-			   "tags": ["vampire", "teeth", "bat"],
-			   "date": datetime.datetime.utcnow()
-			   }
-
-		# Insert the monster document into the monsters collection
-		monster_id = collection.insert(monster)
-
-		# Print out our monster documents
-		for monster in collection.find():
-		    print monster
-
-		# Query for a particular monster
-		print collection.find_one({"name": "Dracula"})
-
+		self.erase()
+	def erase(self):
+                if args.erase:
+                        if RepresentsInt(args.erase):
+                                pass # TODO erase COUNT of the oldest documents
+                        else:
+				if args.erase in db.collection_list():
+					print "Collection " + args.erase  + " will be deleted after 5 seconds..press Ctrl + C to interrupt"
+					time.sleep(5)
+					self.db.drop_collection(args.erase)
+				else:
+					print "Wrong collection"
+				print db.collection_list()
 		
 Parsing_args_inst=Parsing_args()
 Parsing_args_inst.parse()
 db = MongoHQ()
-print db.collection_list()
+db.operations()
 if args.build:
 	Build.parse_args()
 if args.runtests:
