@@ -314,12 +314,13 @@ class MongoHQ(object):
 	def add_textfile(self,path):
 		print '===Uploading log file to the database==='
 		fname="filename"
-		collection = self.db.kim_collection
+		collection = self.db[package]
 		f = open(path)
 		text = ""
 		text = f.read()
 		text_file_doc = {fname: path, "contents": text, "date": datetime.datetime.now().strftime('%d.%m.%Y'), "time": datetime.datetime.now().strftime('%H:%M:%S'), 'repo': repo, 'aarch': arch, 'package': package, 'compiler': compiler, 'version': version}
 		collection.insert(text_file_doc)
+		if (debug):	print collection.find_one()
 
 	def operations(self):
 		self.erase()
