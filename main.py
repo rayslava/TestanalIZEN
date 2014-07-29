@@ -68,7 +68,7 @@ class Parsing_args(object):
 		group.add_argument('-b','--build', help="OSC co&build: -b osc 'REPOSITORY ARCH PACKAGE [OPTS]'\n",nargs='+')
 		group.add_argument('-r','--runtests',help='Run tests: -r PACKAGE') 
 		group.add_argument('-p','--parse',help='Parsing results: -p PACKAGE')
-		group.add_argument('-c','--compare',help='compare <> <> <>', nargs='+')
+		group.add_argument('-c','--compare',help='Compare results between A and B: -c PACKAGE A B', nargs='+')
 		argparser.add_argument('-d','--debug',help='debug', action='store_true')
 		argparser.add_argument('-e','--erase',help='erase db COLLECTION/COUNT of the oldest documents')
 		args = argparser.parse_args()
@@ -302,6 +302,44 @@ class MongoHQ(object):
 					print "Wrong collection"
 				print db.collection_list()
 		
+class Compare(object):
+        def __init__(self):
+                pass
+        ## TODO compare expand
+        #
+        #       
+        @staticmethod
+        def parse_args():
+		global argparser,args
+                if args.parse[0] == 'gcc49':
+                        print '===GCC 4.9 compare request==='
+                        compare_gcc49 = Compare_gcc49()
+                        compare_gcc49.start()
+			
+                else:
+                        print 'Bad input'
+                        argparser.print_help()
+                        sys.exit(0)
+
+                if debug:
+                        print 'compare agrs'
+                        print args.compare
+			
+class Compare_gcc49(Compare):
+        params=""
+        def __init__(self): # TODO 
+                super(Build, self).__init__()
+                self.params = args.compare[1]
+                if len(mList) >= 3:
+                        self.repo=mList[0]
+                        self.arch=mList[1]
+                        self.package=mList[2]
+                        del mList[2]
+                        self.params = ' '.join(mList)
+                else:
+                        print 'Bad input'
+                        sys.exit(0)
+	
 Parsing_args_inst=Parsing_args()
 Parsing_args_inst.parse()
 db = MongoHQ()
@@ -312,4 +350,6 @@ if args.runtests:
 	Run_tests.parse_args()
 if args.parse:
 	Parse.parse_args()	
+if args.compare:
+	Compare.parse_args()	
 print '====finish==='
