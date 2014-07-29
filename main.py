@@ -72,11 +72,6 @@ class Parsing_args(object):
 		argparser.add_argument('-d','--debug',help='debug', action='store_true')
 		argparser.add_argument('-e','--erase',help='erase db COLLECTION/COUNT of the oldest documents')
 		args = argparser.parse_args()
-		if args.erase:
-			if RepresentsInt(args.erase):
-				pass # TODO erase COUNT of the oldest documents
-			else:	
-				pass # TODO erase db COLLECTION
 		if args.debug:
 			debug = True
 			print "===Debug==="
@@ -292,8 +287,12 @@ class MongoHQ(object):
 		self.erase()
 	def erase(self):
                 if args.erase:
-                        if RepresentsInt(args.erase):
+                        if RepresentsInt(args.erase):# and args.erase < db.users.count:
+				#db.collection.remove()
                                 pass # TODO erase COUNT of the oldest documents
+				# Условия
+				#for user in db.users.find().where('this.name == "user 2" || this.level>3'):
+				#    print user
                         else:
 				if args.erase in db.collection_list():
 					print "Collection " + args.erase  + " will be deleted after 5 seconds..press Ctrl + C to interrupt"
