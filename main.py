@@ -56,8 +56,10 @@ class Parsing_args(object):
 		Examples:
 		  -b osc 'aarch aarch64 gcc49 --no-verify --clean' -d 
 		  -r osc 'aarch aarch64 gcc49'
+		  -c osc 'aarch aarch64 gcc49' 2 years ago
 		  -c osc 'aarch aarch64 gcc49' week ago
 		  -c osc 'aarch aarch64 gcc49' 31.06.14 14.06.15
+		  -c osc 'aarch aarch64 gcc49' 31.06.14
 		  -c osc 'aarch aarch64 gcc49' gcc48
 		  -c osc 'aarch aarch64 gcc49' i586
 		  -e my_collection 
@@ -128,7 +130,7 @@ class Build_osc(OSC):
 		if repo in repo_list:
 			if arch in arch_list:
 				if package in package_list:
-					print 'Good input'
+					if(debug): print 'Good input'
 					self.checkout()
 					self.build()
 				else: 
@@ -191,7 +193,7 @@ class Run_tests_osc(OSC):
 		if repo in repo_list:
                         if arch in arch_list:
                                 if package in package_list:
-                                        print 'Good input'
+                                        if(debug): print 'Good input'
 					self.get_results()
                                 else:
                                         print 'Wrong PACKAGE, package list:'
@@ -228,10 +230,10 @@ class Parse(object):
 	#	
 	@staticmethod
 	def parse_args():
-		if args.parse == 'gcc49':
-			print '===GCC 4.9 parse request==='
-			parse_gcc49 = Parse_gcc49()
-			parse_gcc49.start()
+		if args.parse == 'gcc':
+			print '===GCC parse request==='
+			parse_gcc = Parse_gcc()
+			parse_gcc.start()
 		else:
 			print 'Bad input'
                         argparser.print_help()
@@ -241,7 +243,7 @@ class Parse(object):
 			print 'parse agrs'
 			print args.parse
 	
-class Parse_gcc49(Parse):
+class Parse_gcc(Parse):
         ## TODO
         # 
         #    
@@ -251,23 +253,24 @@ class Parse_gcc49(Parse):
         xfail_cnt = 0
         unsupported_cnt= 0
         unresolved_cnt= 0
-        def __init__(self):
-		super(Parse_gcc49, self).__init__()
+	log = None
+	def __init__(self,log):
+		super(Parse_gcc, self).__init__()
                 self.pass_cnt = 0
                 self.xpass_cnt = 0
                 self.fail_cnt = 0
                 self.xfail_cnt = 0
                 self.unsupported_cnt = 0
                 self.unresolved_cnt = 0
-	def start(self, params = None):
+		self.log = log
+	def start(self):
                 pass_regexp = re.compile('(?:# of expected passes\s*)(\d+)')
                 xpass_regexp = re.compile('(?:# of unexpected successes\s*)(\d+)')
                 fail_regexp = re.compile('(?:# of expected failures\s*)(\d+)')
                 xfail_regexp = re.compile('(?:# of unexpected failures\s*)(\d+)')
                 unsupported_regexp = re.compile('(?:# of unsupported tests\s*)(\d+)')
                 unresolved_regexp = re.compile('(?:# of unresolved testcases\s*)(\d+)')
-		f = db.read_textfile('gcc49',params) 
-                for line in f:
+		for line in self.log:
 			if pass_regexp.match(line):
 				self.pass_cnt += int(pass_regexp.match(line).group(1))
 			if fail_regexp.match(line):
@@ -283,7 +286,7 @@ class Parse_gcc49(Parse):
 		self.show()
 	
         def show(self):
-		print '===GCC 4.9 TESTS RESULTS==='
+		print '===GCC TESTS RESULTS==='
                 print 'PASS: %d' % self.pass_cnt
                 print 'FAIL: %d' % self.fail_cnt
                 print 'XPASS: %d' % self.xpass_cnt
@@ -308,7 +311,7 @@ class MongoHQ(object):
 	def add_textfile(self,path):
 		print '===Uploading log file to the database==='
 		fname="filename"
-		collection = self.db[package]
+		collection = self.db[package] # TODO replace package with compiler
 		f = open(path)
 		text = ""
 		text = f.read()
@@ -316,26 +319,24 @@ class MongoHQ(object):
 		collection.insert(text_file_doc)
 		if (debug): print collection.find().sort('date',-1).limit(1)[0] # what we uploaded 
 
-	def read_textfile(self, collection, params = None):
-		print '===Reading log file from the database==='
+	def read_logs(self, collection, params = None):
+		print '===Reading log files from the database==='
 		collection = self.db[collection]
-                text = ""
+                logs = []
+		log = ""
 		if params == None:
-			log = collection.find().sort('date',-1).limit(1)[0]	
+			doc = collection.find().sort('date',-1).limit(1)[0]	
 		elif type(params[0]) == datetime and type(params[1] == datetime):
-			log = collection.find().sort('date',-1).limit(1)[0]	
-			start =  params[0] # datetime(2012, 2, 2, 6, 35, 6, 764)
+			start =  params[0]
 			end = params[1]
-			if (debug):
-				for doc in collection.find({'date': {'$gte': start, '$lt': end}}):
-					print '\n###'
-					print doc
-			print collection.find({'date': {'$gte': start, '$lt': end}}).count()
-
-		if (debug): print log
-		text = log['contents']
-		text=text.decode("utf-8").split('\n')
-		return text
+			count = collection.find({'date': {'$gte': start, '$lt': end}}).count()
+			print count
+			i = 0
+			for doc in collection.find({'date': {'$gte': start, '$lt': end}}): # TODO threads
+				log = doc['contents']
+				log = log.decode("utf-8").split('\n')
+				logs.append(log)
+		return logs
 
 	def operations(self):
 		self.erase()
@@ -400,6 +401,8 @@ class Compare_osc(OSC):
 					dt = timedelta(weeks=int(args.compare[2]))
 				elif  args.compare[3] == 'days':
 					dt = timedelta(days=int(args.compare[2]))
+                                elif  args.compare[3] == 'hours':
+                                        dt = timedelta(hours=int(args.compare[2]))
 				else:
 					print 'Bad input'
 					argparser.print_help()
@@ -420,6 +423,8 @@ class Compare_osc(OSC):
                                         dt = timedelta(weeks=1)
                                 if  args.compare[2] == 'day':
                                         dt = timedelta(days=1)
+                                elif  args.compare[3] == 'hour':
+                                        dt = timedelta(hours=1)
                                 self.date1 = datetime.now() - dt
                         else: # ex: -c osc 'aarch..' 12.12.12 21.12.21
 				self.date1 = self.parse_datetime(args.compare[2])
@@ -443,8 +448,11 @@ class Compare_osc(OSC):
 
 
 	def start(self):
-		parse_gcc49 = Parse_gcc49()
-		parse_gcc49.start([self.date1, self.date2])
+		logs = db.read_logs('gcc49',[self.date1, self.date2]) 
+		for log in logs:
+			parse_gcc = Parse_gcc(log)
+			parse_gcc.start()
+		
 		
 Parsing_args_inst=Parsing_args()
 Parsing_args_inst.parse()
