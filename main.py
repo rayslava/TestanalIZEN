@@ -43,8 +43,6 @@ def RepresentsInt(s):
                 return False
 
 class Parsing_args(object):
-	def __init__(self):
-		pass
 	## TODO parse expand
 	# 
 	#  Just edit description section and add some arguments to the parser 	
@@ -57,11 +55,11 @@ class Parsing_args(object):
 
 		Examples:
 		  -b osc 'aarch aarch64 gcc49 --no-verify --clean' -d 
-		  -r osc 'aarcg aarch64 gcc49'
-		  -c gcc49 week ago
-		  -c gcc49 31.06.14 14.06.15
-		  -c gcc49 gcc48
-		  -c gcc49 aarch64 i586
+		  -r osc 'aarch aarch64 gcc49'
+		  -c osc 'aarch aarch64 gcc49' week ago
+		  -c osc 'aarch aarch64 gcc49' 31.06.14 14.06.15
+		  -c osc 'aarch aarch64 gcc49' gcc48
+		  -c osc 'aarch aarch64 gcc49' i586
 		  -e my_collection 
 		  -e 100500
 						''')
@@ -79,8 +77,6 @@ class Parsing_args(object):
 		if debug:print args
 
 class Build(object):
-	def __init__(self):
-		pass
 	## TODO build expand
 	#
 	# add some NON osc build requests 
@@ -157,9 +153,6 @@ class Build_osc(object):
 			subprocess.call(["osc build " + self.params], shell = True)
 
 class Run_tests(object):
-	def __init__(self):
-		global package
-		package = args.runtests
         ## TODO tests expand
         #
         # add some NON osc run tests requests  	
@@ -180,20 +173,16 @@ class Run_tests(object):
 			print args.runtests
 
 class Run_tests_osc(object):
-	params=""
 	## TODO tests expand
         #
         # add new packages in the start method 
 	def __init__(self):
         	global repo,arch,package
-                self.params = args.runtests[1]
-                mList = self.params.split(' ')
+                mList = args.runtests[1].split(' ')
                 if len(mList) >= 3:
                         repo=mList[0]
                         arch=mList[1]
                         package=mList[2]
-                        del mList[2]
-                        self.params = ' '.join(mList)
                 else:
                         print 'Bad input'
 			argparser.print_help()
@@ -253,7 +242,7 @@ class Parse(object):
 			print 'parse agrs'
 			print args.parse
 	
-class Parse_gcc49(object):
+class Parse_gcc49(Parse):
         pass_cnt = 0
         xpass_cnt = 0
         fail_cnt = 0
@@ -261,13 +250,14 @@ class Parse_gcc49(object):
         unsupported_cnt= 0
         unresolved_cnt= 0
         def __init__(self):
+		super(Parse_gcc49, self).__init__()
                 self.pass_cnt = 0
                 self.xpass_cnt = 0
                 self.fail_cnt = 0
                 self.xfail_cnt = 0
                 self.unsupported_cnt = 0
                 self.unresolved_cnt = 0
-	def start(self):
+	def start(self, params = None):
                 pass_regexp = re.compile('(?:# of expected passes\s*)(\d+)')
                 xpass_regexp = re.compile('(?:# of unexpected successes\s*)(\d+)')
                 fail_regexp = re.compile('(?:# of expected failures\s*)(\d+)')
@@ -317,15 +307,15 @@ class MongoHQ(object):
 		f = open(path)
 		text = ""
 		text = f.read()
-		text_file_doc = {fname: path, "contents": text, "date": datetime.datetime.now().strftime('%d.%m.%Y'), "time": datetime.datetime.now().strftime('%H:%M:%S'), 'repo': repo, 'aarch': arch, 'package': package, 'compiler': compiler, 'version': version}
+		text_file_doc = {fname: path, "contents": text, "date": datetime.datetime.now().strftime('%d.%m.%Y'), "time": datetime.datetime.now().strftime('%H:%M:%S'), 'repo': repo, 'aarch': arch, 'compiler': compiler, 'version': version}
 		collection.insert(text_file_doc)
 		if (debug):	print collection.find_one()
 
-	def read_textfile(self, collection):
+	def read_textfile(self, collection, params = None):
 		print '===Reading log file from the database==='
 		collection = self.db[collection]
                 text = ""
-		text = collection.find_one()['contents']
+		text = collection.find_one(params)['contents']
 		text=text.decode("utf-8").split('\n')
 		return text
 
@@ -348,44 +338,41 @@ class MongoHQ(object):
 				print db.collection_list()
 		
 class Compare(object):
-        def __init__(self):
-                pass
         ## TODO compare expand
         #
         #       
         @staticmethod
         def parse_args():
-		global argparser,args
-                if args.parse[0] == 'gcc49':
-                        print '===GCC 4.9 compare request==='
-                        compare_gcc49 = Compare_gcc49()
-                        compare_gcc49.start()
-			
+                ### OSC compare request
+                if args.compare[0]=='osc':
+                        print '===Osc compare request..==='
+                        osc = Compare_osc()
+                        osc.start()
                 else:
                         print 'Bad input'
                         argparser.print_help()
                         sys.exit(0)
 
                 if debug:
-                        print 'compare agrs'
+                        print 'compare args: '
                         print args.compare
 			
 class Compare_gcc49(object):
-        params=""
-        def __init__(self): # TODO 
-		mList=[]
-                self.params = args.compare[1]
+        ## TODO compare expand
+        #
+        # add new packages in the start method 
+        def __init__(self):
+                global repo,arch,package
+                mList = args.compare[1].split(' ')
                 if len(mList) >= 3:
                         repo=mList[0]
                         arch=mList[1]
                         package=mList[2]
-                        del mList[2]
-                        self.params = ' '.join(mList)
                 else:
                         print 'Bad input'
-			argparser.print_help()
+                        argparser.print_help()
                         sys.exit(0)
-		
+
 	def start(self):
 		pass
 		
