@@ -76,6 +76,28 @@ class Parsing_args(object):
 			print "===Debug==="
 		if debug:print args
 
+class OSC(object):
+	params = ""
+	def __init__(self):
+                global repo,arch,package
+                if args.build:
+			self.params = args.build[1]
+		elif args.runtests:
+			self.params = args.runtests[1]
+		elif args.compare:
+			self.params = args.compare[1]
+                mList = self.params.split(' ')
+                if len(mList) >= 3:
+                        repo=mList[0]
+                        arch=mList[1]
+                        package=mList[2]
+                        del mList[2]
+                        self.params = ' '.join(mList)
+                else:
+                        print 'Bad input'
+                        argparser.print_help()
+                        sys.exit(0)
+	
 class Build(object):
 	## TODO build expand
 	#
@@ -96,23 +118,8 @@ class Build(object):
 			print 'build args:'
 			print args.build
 
-class Build_osc(object):
+class Build_osc(OSC):
 	params=""
-	def __init__(self):
-		global repo,arch,package
-		self.params = args.build[1]
-		mList = self.params.split(' ')
-		if len(mList) >= 3:
-			repo=mList[0]
-			arch=mList[1]
-			package=mList[2]
-			del mList[2]
-			self.params = ' '.join(mList)
-		else:
-			print 'Bad input'
-			argparser.print_help()
-			sys.exit(0)
-
 	def start(self): 
 		if repo in repo_list:
 			if arch in arch_list:
@@ -172,22 +179,10 @@ class Run_tests(object):
 			print 'runtests args: '
 			print args.runtests
 
-class Run_tests_osc(object):
+class Run_tests_osc(OSC):
 	## TODO tests expand
         #
         # add new packages in the start method 
-	def __init__(self):
-        	global repo,arch,package
-                mList = args.runtests[1].split(' ')
-                if len(mList) >= 3:
-                        repo=mList[0]
-                        arch=mList[1]
-                        package=mList[2]
-                else:
-                        print 'Bad input'
-			argparser.print_help()
-                        sys.exit(0)
-		
 	def start(self):
 		if repo in repo_list:
                         if arch in arch_list:
@@ -357,22 +352,10 @@ class Compare(object):
                         print 'compare args: '
                         print args.compare
 			
-class Compare_gcc49(object):
+class Compare_gcc49(OSC):
         ## TODO compare expand
         #
         # add new packages in the start method 
-        def __init__(self):
-                global repo,arch,package
-                mList = args.compare[1].split(' ')
-                if len(mList) >= 3:
-                        repo=mList[0]
-                        arch=mList[1]
-                        package=mList[2]
-                else:
-                        print 'Bad input'
-                        argparser.print_help()
-                        sys.exit(0)
-
 	def start(self):
 		pass
 		
