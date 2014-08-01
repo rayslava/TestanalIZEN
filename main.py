@@ -6,7 +6,7 @@ import os
 import argparse
 import subprocess
 import re
-import datetime
+from datetime import datetime,timedelta
 from pymongo import MongoClient
 import time
 
@@ -63,10 +63,9 @@ class Parsing_args(object):
 		  -e my_collection 
 		  -e 100500
 						''')
-		group = argparser.add_mutually_exclusive_group(required=True)
-		group.add_argument('-b','--build', help="OSC co&build: -b osc 'REPOSITORY ARCH PACKAGE [OPTS]'\n",nargs='+')
-		group.add_argument('-r','--runtests',help="Run tests: -r osc 'REPOSITORY ARCH PACKAGE'", nargs = '+') 
-		group.add_argument('-c','--compare',help='Compare results between A and B(time,repo,aarch,version): -c PACKAGE A B', nargs='+')
+		argparser.add_argument('-b','--build', help="OSC co&build: -b osc 'REPOSITORY ARCH PACKAGE [OPTS]'\n",nargs='+')
+		argparser.add_argument('-r','--runtests',help="Run tests: -r osc 'REPOSITORY ARCH PACKAGE'", nargs = '+') 
+		argparser.add_argument('-c','--compare',help='Compare results between A and B(time,repo,aarch,version): -c PACKAGE A B', nargs='+')
 		argparser.add_argument('-p','--parse',help='Parsing results: -p PACKAGE')
 		argparser.add_argument('-d','--debug',help='debug', action='store_true')
 		argparser.add_argument('-e','--erase',help='erase db COLLECTION/COUNT of the oldest documents')
@@ -77,10 +76,13 @@ class Parsing_args(object):
 		if debug:print args
 
 class OSC(object):
+        ## 
+        # Parent class, parses osc params 
+        # 
 	params = ""
 	def __init__(self):
                 global repo,arch,package
-                if args.build:
+                if args.build and len(args.build) >= 2:
 			self.params = args.build[1]
 		elif args.runtests:
 			self.params = args.runtests[1]
@@ -100,7 +102,7 @@ class OSC(object):
 	
 class Build(object):
 	## TODO build expand
-	#
+	# Class chooses apropriate build type
 	# add some NON osc build requests 
 	@staticmethod
 	def parse_args():
@@ -119,7 +121,9 @@ class Build(object):
 			print args.build
 
 class Build_osc(OSC):
-	params=""
+        ##
+        # Class checkout and build osc package
+	# TODO check repo, arch and package lists
 	def start(self): 
 		if repo in repo_list:
 			if arch in arch_list:
@@ -161,7 +165,7 @@ class Build_osc(OSC):
 
 class Run_tests(object):
         ## TODO tests expand
-        #
+        # Class runs apropriate tests
         # add some NON osc run tests requests  	
         @staticmethod
         def parse_args():
@@ -181,7 +185,7 @@ class Run_tests(object):
 
 class Run_tests_osc(OSC):
 	## TODO tests expand
-        #
+        # Class get osc test results
         # add new packages in the start method 
 	def start(self):
 		if repo in repo_list:
@@ -220,7 +224,7 @@ class Parse(object):
 	def __init__(self):
         	pass
 	## TODO parse expand
-	#
+	# debug class
 	#	
 	@staticmethod
 	def parse_args():
@@ -238,6 +242,9 @@ class Parse(object):
 			print args.parse
 	
 class Parse_gcc49(Parse):
+        ## TODO
+        # 
+        #    
         pass_cnt = 0
         xpass_cnt = 0
         fail_cnt = 0
@@ -259,7 +266,7 @@ class Parse_gcc49(Parse):
                 xfail_regexp = re.compile('(?:# of unexpected failures\s*)(\d+)')
                 unsupported_regexp = re.compile('(?:# of unsupported tests\s*)(\d+)')
                 unresolved_regexp = re.compile('(?:# of unresolved testcases\s*)(\d+)')
-		f = db.read_textfile('gcc49')
+		f = db.read_textfile('gcc49',params) 
                 for line in f:
 			if pass_regexp.match(line):
 				self.pass_cnt += int(pass_regexp.match(line).group(1))
@@ -285,6 +292,9 @@ class Parse_gcc49(Parse):
                 print 'UNRESOLVED: %d' % self.unresolved_cnt
 
 class MongoHQ(object):
+        ## TODO 
+        # 
+        #    
 	db = None
 	def __init__(self):
 		MONGO_URL = os.environ.get('MONGOHQ_URL')
@@ -302,15 +312,28 @@ class MongoHQ(object):
 		f = open(path)
 		text = ""
 		text = f.read()
-		text_file_doc = {fname: path, "contents": text, "date": datetime.datetime.now().strftime('%d.%m.%Y'), "time": datetime.datetime.now().strftime('%H:%M:%S'), 'repo': repo, 'aarch': arch, 'compiler': compiler, 'version': version}
+		text_file_doc = {fname: path, "contents": text, "date": datetime.now(), 'repo': repo, 'aarch': arch, 'compiler': compiler, 'version': version}
 		collection.insert(text_file_doc)
-		if (debug):	print collection.find_one()
+		if (debug): print collection.find().sort('date',-1).limit(1)[0] # what we uploaded 
 
 	def read_textfile(self, collection, params = None):
 		print '===Reading log file from the database==='
 		collection = self.db[collection]
                 text = ""
-		text = collection.find_one(params)['contents']
+		if params == None:
+			log = collection.find().sort('date',-1).limit(1)[0]	
+		elif type(params[0]) == datetime and type(params[1] == datetime):
+			log = collection.find().sort('date',-1).limit(1)[0]	
+			start =  params[0] # datetime(2012, 2, 2, 6, 35, 6, 764)
+			end = params[1]
+			if (debug):
+				for doc in collection.find({'date': {'$gte': start, '$lt': end}}):
+					print '\n###'
+					print doc
+			print collection.find({'date': {'$gte': start, '$lt': end}}).count()
+
+		if (debug): print log
+		text = log['contents']
 		text=text.decode("utf-8").split('\n')
 		return text
 
@@ -334,7 +357,7 @@ class MongoHQ(object):
 		
 class Compare(object):
         ## TODO compare expand
-        #
+        # 
         #       
         @staticmethod
         def parse_args():
@@ -352,12 +375,76 @@ class Compare(object):
                         print 'compare args: '
                         print args.compare
 			
-class Compare_gcc49(OSC):
+class Compare_osc(OSC):
         ## TODO compare expand
         #
         # add new packages in the start method 
+	A = None
+	B = None
+	date1 = None
+	date2 = None
+	def __init__(self):
+		super(Compare_osc, self).__init__()
+		self.A = None
+		self.B = None
+		self.date1 = datetime.now()
+		self.date2 = datetime.now()
+		if len(args.compare) >= 5: 
+			if args.compare[4] == "ago": # ex: -c osc 'aarch..' 2 years ago
+				dt = timedelta() 
+				if args.compare[3] == 'years':
+					dt = timedelta(days=366*int(args.compare[2]))                                  
+				elif args.compare[3] == 'months':
+					dt = timedelta(days=31*int(args.compare[2]))                                                                   
+				elif  args.compare[3] == 'weeks':
+					dt = timedelta(weeks=int(args.compare[2]))
+				elif  args.compare[3] == 'days':
+					dt = timedelta(days=int(args.compare[2]))
+				else:
+					print 'Bad input'
+					argparser.print_help()
+					sys.exit(0)
+				self.date1 = datetime.now() - dt
+			else:
+				print 'Bad input'
+				argparser.print_help()
+				sys.exit(0)
+		elif len(args.compare) >= 4:
+                        if args.compare[3] == "ago": # ex: -c osc 'aarch..' week ago	
+				dt = 0
+				if args.compare[2] == 'year':
+					dt = timedelta(days=366)
+				if args.compare[2] == 'month':
+                                        dt = timedelta(days=31)                                                                   
+                                if  args.compare[2] == 'week':
+                                        dt = timedelta(weeks=1)
+                                if  args.compare[2] == 'day':
+                                        dt = timedelta(days=1)
+                                self.date1 = datetime.now() - dt
+                        else: # ex: -c osc 'aarch..' 12.12.12 21.12.21
+				self.date1 = self.parse_datetime(args.compare[2])
+				self.date2 = self.parse_datetime(args.compare[3])
+				
+		elif len(args.compare)>= 3:
+			if args.compare[2] in arch_list:
+                                pass
+                        elif args.compare[2] in package_list:
+                                pass
+			else: # ex: -c osc 'aarch..' 12.12.12
+                                self.date1 = self.parse_datetime(args.compare[2])
+
+	def parse_datetime(self, date):
+		try:
+			return datetime.strptime(date, '%d.%m.%y')
+		except ValueError:
+			print 'Bad input'
+			argparser.print_help()
+			sys.exit(0)
+
+
 	def start(self):
-		pass
+		parse_gcc49 = Parse_gcc49()
+		parse_gcc49.start([self.date1, self.date2])
 		
 Parsing_args_inst=Parsing_args()
 Parsing_args_inst.parse()
