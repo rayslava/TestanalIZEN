@@ -144,6 +144,7 @@ class Compare_osc(OSC):
         date1 = None
         date2 = None
 	dates = []
+	compare_type = None
         def __init__(self, args, db):
                 super(Compare_osc, self).__init__(args, db)
                 self.A = None
@@ -152,6 +153,7 @@ class Compare_osc(OSC):
                 self.date2 = datetime.now()
                 if len(args.compare) >= 5:
                         if args.compare[4] == "ago": # ex: -c osc 'aarch..' 2 years ago
+				self.compare_type = 'datetime'
                                 dt = timedelta()
                                 if args.compare[3] == 'years':
                                         dt = timedelta(days=366*int(args.compare[2]))
@@ -176,6 +178,7 @@ class Compare_osc(OSC):
                                 sys.exit(0)
                 elif len(args.compare) >= 4:
                         if args.compare[3] == "ago": # ex: -c osc 'aarch..' week ago    
+				self.compare_type = 'datetime'
                                 dt = 0
                                 if args.compare[2] == 'year':
                                         dt = timedelta(days=366)
@@ -193,6 +196,7 @@ class Compare_osc(OSC):
                                         sys.exit(0)
                                 self.date1 = datetime.now() - dt
                         else: # ex: -c osc 'aarch..' 12.12.12 21.12.21
+				self.compare_type = 'datetime'
                                 self.date1 = self.parse_datetime(args.compare[2])
                                 self.date2 = self.parse_datetime(args.compare[3])
 
@@ -202,6 +206,7 @@ class Compare_osc(OSC):
                         elif args.compare[2] in package_list:
                                 pass
                         else: # ex: -c osc 'aarch..' 12.12.12
+				self.compare_type = 'datetime'
                                 self.date1 = self.parse_datetime(args.compare[2])
 
         def parse_datetime(self, date):
@@ -214,22 +219,33 @@ class Compare_osc(OSC):
 
         def start(self):
 		passfail_mass = []
-                logs = self.db.read_logs('gcc',[self.date1, self.date2]) # TODO compiller
-                for log in logs:
-			passfail = []
-			self.dates.append(log[1])
-                        parse_gcc = Parse_gcc(log)
-                        parse_gcc.start()
+		parse_gcc_list = []
+		if self.compare_type == 'datetime':
+			import time
+			start = time.time()
+			logs = self.db.read_logs('gcc',[self.date1, self.date2]) # TODO compiller
+			mid = time.time()
+			print mid - start
+			for log in logs:
+				passfail = []
+				self.dates.append(log[1])
+				parse_gcc = Parse_gcc(log)
+				parse_gcc.start()
+				parse_gcc_list.append(parse_gcc)
+			for parse_gcc in parse_gcc_list:
+				parse_gcc.join()
+				parse_gcc.show()
+				passfail = parse_gcc.get()
+				passfail_mass.append(passfail)
+			finish = time.time()
+			print finish - mid
+			for i in range(len(passfail)):
+				y = []
+				for _ in range(len(passfail_mass)):
+					y.append(passfail_mass[_][i])
+				self.plot_datetime(self.dates, y)
 
-			passfail = parse_gcc.get()
-			passfail_mass.append(passfail)
-		for i in range(len(passfail)):
-			y = []
-			for _ in range(len(passfail_mass)):
-				y.append(passfail_mass[_][i])
-			self.plot_data(self.dates, y)
-
-	def plot_data(self, x, y):
+	def plot_datetime(self, x, y):
                 plt.plot_date(x,y, fmt ="r-")
                 plt.gcf().autofmt_xdate()
                 plt.show()

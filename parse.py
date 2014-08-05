@@ -3,8 +3,9 @@
 import re
 import sys
 import random
+from threading import Thread
 
-class Parse_gcc(object):
+class Parse_gcc(Thread):
         ## TODO
         # 
         #    
@@ -16,6 +17,7 @@ class Parse_gcc(object):
         unresolved_cnt= 0
 	contents = ""
         def __init__(self,log):
+		Thread.__init__(self)
                 self.pass_cnt = 0
                 self.xpass_cnt = 0
                 self.fail_cnt = 0
@@ -25,7 +27,7 @@ class Parse_gcc(object):
 		self.contents = log[0]
 		self.date = log[1]
 
-        def start(self):
+        def run(self):
                 pass_regexp = re.compile('(?:# of expected passes\s*)(\d+)')
                 xpass_regexp = re.compile('(?:# of unexpected successes\s*)(\d+)')
                 fail_regexp = re.compile('(?:# of expected failures\s*)(\d+)')
@@ -46,7 +48,6 @@ class Parse_gcc(object):
                         if unresolved_regexp.match(line):
                                 self.unresolved_cnt += int(unresolved_regexp.match(line).group(1))
 		self.rand() # TODO debug function, remove before release
-                self.show()
 
         def show(self):
                 print '===GCC TESTS RESULTS==='
