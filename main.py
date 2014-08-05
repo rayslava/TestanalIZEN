@@ -6,7 +6,7 @@ import os
 import argparse
 import subprocess
 import re
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 from pymongo import MongoClient
 import time
 from osc import *
@@ -16,9 +16,9 @@ args = None
 argparser = None
 debug = False
 
-def RepresentsInt(s):
+def representsInt(S):
         try:
-                int(s)
+                int(S)
                 return True
         except ValueError:
                 return False
@@ -28,7 +28,7 @@ class Parsing_args(object):
 	# 
 	#  Just edit description section and add some arguments to the parser
 	def parse(self):
-                global debug,argparser,args
+                global debug, argparser, args
                 argparser = argparse.ArgumentParser(
                          formatter_class=argparse.RawDescriptionHelpFormatter,
                          description='''
@@ -46,12 +46,12 @@ class Parsing_args(object):
                   -e my_collection 
                   -e 100500
                                                 ''')
-                argparser.add_argument('-b','--build', help="OSC co&build: -b osc 'REPOSITORY ARCH PACKAGE [OPTS]'\n",nargs='+')
-                argparser.add_argument('-r','--runtests',help="Run tests: -r osc 'REPOSITORY ARCH PACKAGE'", nargs = '+')
-                argparser.add_argument('-c','--compare',help='Compare results between A and B(time,repo,aarch,version): -c PACKAGE A B', nargs='+')
-                argparser.add_argument('-p','--parse',help='Parsing results: -p PACKAGE')
-                argparser.add_argument('-d','--debug',help='debug', action='store_true')
-                argparser.add_argument('-e','--erase',help='erase db COLLECTION/COUNT of the oldest documents')
+                argparser.add_argument('-b', '--build', help = "OSC co&build: -b osc 'REPOSITORY ARCH PACKAGE [OPTS]'\n", nargs = '+')
+                argparser.add_argument('-r', '--runtests', help = "Run tests: -r osc 'REPOSITORY ARCH PACKAGE'", nargs = '+')
+                argparser.add_argument('-c', '--compare', help = 'Compare results between A and B(time,repo,aarch,version): -c PACKAGE A B', nargs = '+')
+                argparser.add_argument('-p', '--parse', help = 'Parsing results: -p PACKAGE')
+                argparser.add_argument('-d', '--debug', help = 'debug', action = 'store_true')
+                argparser.add_argument('-e', '--erase', help = 'erase db COLLECTION/COUNT of the oldest documents')
                 args = argparser.parse_args()
                 if args.debug:
                         debug = True
@@ -108,7 +108,7 @@ class Parse(object):
         def parse_args(args):
                 if args.parse == 'gcc':
                         print '===GCC parse request==='
-                        pass # TODO
+                        # TODO
                 else:
                         print 'Bad input'
                         print 'Please read help'
@@ -134,12 +134,11 @@ class MongoHQ(object):
 	
 	def add_textfile(self, path, collection):
 		print '===Uploading log file to the database==='
-		fname="filename"
 		collection = self.db[collection] 
 		f = open(path)
 		text = ""
 		text = f.read()
-		text_file_doc = {fname: path, "contents": text, "date": datetime.now(), 'repo': repo, 'aarch': arch, 'package': package, 'compiler': compiler, 'version': version}
+		text_file_doc = {"filename": path, "contents": text, "date": datetime.now(), 'repo': repo, 'aarch': arch, 'package': package, 'compiler': compiler, 'version': version}
 		collection.insert(text_file_doc)
 		if (debug): print collection.find().sort('date',-1).limit(1)[0] # what we uploaded 
 
