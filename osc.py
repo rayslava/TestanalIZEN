@@ -4,6 +4,7 @@ from datetime import datetime,timedelta
 from parse import * 
 import contextlib
 import sys
+import matplotlib.pyplot as plt
 
 # TODO expand this
 repo_list = ['aarch','2','3']
@@ -142,6 +143,7 @@ class Compare_osc(OSC):
         B = None
         date1 = None
         date2 = None
+	dates = []
         def __init__(self, args, db):
                 super(Compare_osc, self).__init__(args, db)
                 self.A = None
@@ -177,11 +179,11 @@ class Compare_osc(OSC):
                                 dt = 0
                                 if args.compare[2] == 'year':
                                         dt = timedelta(days=366)
-                                if args.compare[2] == 'month':
+                                elif args.compare[2] == 'month':
                                         dt = timedelta(days=31)
-                                if  args.compare[2] == 'week':
+                                elif  args.compare[2] == 'week':
                                         dt = timedelta(weeks=1)
-                                if  args.compare[2] == 'day':
+                                elif  args.compare[2] == 'day':
                                         dt = timedelta(days=1)
                                 elif  args.compare[2] == 'hour':
                                         dt = timedelta(hours = 1)
@@ -211,7 +213,23 @@ class Compare_osc(OSC):
                         sys.exit(0)
 
         def start(self):
-                logs = self.db.read_logs('gcc',[self.date1, self.date2]) # TODO package
+		passfail_mass = []
+                logs = self.db.read_logs('gcc',[self.date1, self.date2]) # TODO compiller
                 for log in logs:
+			passfail = []
+			self.dates.append(log[1])
                         parse_gcc = Parse_gcc(log)
                         parse_gcc.start()
+
+			passfail = parse_gcc.get()
+			passfail_mass.append(passfail)
+		for i in range(len(passfail)):
+			y = []
+			for _ in range(len(passfail_mass)):
+				y.append(passfail_mass[_][i])
+			self.plot_data(self.dates, y)
+
+	def plot_data(self, x, y):
+                plt.plot_date(x,y, fmt ="r-")
+                plt.gcf().autofmt_xdate()
+                plt.show()

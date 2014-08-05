@@ -14,7 +14,7 @@ class Parse_gcc(object):
         xfail_cnt = 0
         unsupported_cnt= 0
         unresolved_cnt= 0
-        log = None
+	contents = ""
         def __init__(self,log):
                 self.pass_cnt = 0
                 self.xpass_cnt = 0
@@ -22,7 +22,8 @@ class Parse_gcc(object):
                 self.xfail_cnt = 0
                 self.unsupported_cnt = 0
                 self.unresolved_cnt = 0
-                self.log = log
+		self.contents = log[0]
+		self.date = log[1]
 
         def start(self):
                 pass_regexp = re.compile('(?:# of expected passes\s*)(\d+)')
@@ -31,7 +32,7 @@ class Parse_gcc(object):
                 xfail_regexp = re.compile('(?:# of unexpected failures\s*)(\d+)')
                 unsupported_regexp = re.compile('(?:# of unsupported tests\s*)(\d+)')
                 unresolved_regexp = re.compile('(?:# of unresolved testcases\s*)(\d+)')
-                for line in self.log:
+                for line in self.contents:
                         if pass_regexp.match(line):
                                 self.pass_cnt += int(pass_regexp.match(line).group(1))
                         if fail_regexp.match(line):
@@ -49,12 +50,16 @@ class Parse_gcc(object):
 
         def show(self):
                 print '===GCC TESTS RESULTS==='
+		print self.date
                 print 'PASS: %d' % self.pass_cnt
                 print 'FAIL: %d' % self.fail_cnt
                 print 'XPASS: %d' % self.xpass_cnt
                 print 'XFAIL: %d' % self.xfail_cnt
                 print 'UNSUPPORTED: %d' % self.unsupported_cnt
                 print 'UNRESOLVED: %d' % self.unresolved_cnt
+		
+	def get(self):
+		return [self.pass_cnt, self.fail_cnt, self.xpass_cnt, self.xfail_cnt, self.unsupported_cnt, self.unresolved_cnt]
 
 	def rand(self):
 		self.pass_cnt+= random.gauss(0,self.pass_cnt/10)

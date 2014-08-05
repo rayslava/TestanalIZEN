@@ -147,7 +147,7 @@ class MongoHQ(object):
 		print '===Reading log files from the database==='
 		collection = self.db[collection]
                 logs = []
-		log = ""
+		log = []
 		if params == None:
 			doc = collection.find().sort('date',-1).limit(1)[0]	
 		elif type(params[0]) == datetime and type(params[1] == datetime):
@@ -157,8 +157,11 @@ class MongoHQ(object):
 			print count
 			i = 0
 			for doc in collection.find({'date': {'$gte': start, '$lt': end}}): # TODO threads
-				log = doc['contents']
-				log = log.decode("utf-8").split('\n')
+				log = []
+				contents = doc['contents']
+				contents = contents.decode("utf-8").split('\n')
+				log.append(contents)
+				log.append(doc['date'])
 				logs.append(log)
 		return logs
 
