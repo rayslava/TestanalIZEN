@@ -2,6 +2,7 @@
 
 import re
 import sys
+import random
 
 class Parse_gcc(object):
         ## TODO
@@ -43,6 +44,7 @@ class Parse_gcc(object):
                                 self.unsupported_cnt += int(unsupported_regexp.match(line).group(1))
                         if unresolved_regexp.match(line):
                                 self.unresolved_cnt += int(unresolved_regexp.match(line).group(1))
+		self.rand() # TODO debug function, remove before release
                 self.show()
 
         def show(self):
@@ -53,4 +55,12 @@ class Parse_gcc(object):
                 print 'XFAIL: %d' % self.xfail_cnt
                 print 'UNSUPPORTED: %d' % self.unsupported_cnt
                 print 'UNRESOLVED: %d' % self.unresolved_cnt
+
+	def rand(self):
+		self.pass_cnt+= random.gauss(0,self.pass_cnt/10)
+		self.fail_cnt+= random.gauss(0,self.fail_cnt/10)
+		self.xfail_cnt+= random.gauss(0,self.xfail_cnt/10)
+		self.xpass_cnt+= random.gauss(0,self.xpass_cnt/10)
+		self.unsupported_cnt+= random.gauss(0,self.unsupported_cnt/10)
+		self.unresolved_cnt+= random.gauss(0,self.unresolved_cnt/10)
 
