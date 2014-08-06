@@ -7,18 +7,7 @@ import sys
 import matplotlib.pyplot as plt
 import os
 import subprocess
-# TODO expand this
-repo_list = ['aarch', '2', '3']
-arch_list = ['aarch64', '2', '3']
-package_list = ['gcc49', 'llvm', 'check', 'acl']
-##
-PROJECT = "devel:arm_toolchain:Mobile:Base"
-PROJECT_e = PROJECT.replace(":", "\:") + "/"
-repo = ""
-arch = ""
-package = ""
-compiler = ""
-version = ""
+import h
 
 
 @contextlib.contextmanager
@@ -36,29 +25,25 @@ class OSC(object):
         # Parent class, parses osc params
         #
         params = ""
-        db = None
 
-        def __init__(self, args, db):
-                global repo, arch, package
-                if args.build and len(args.build) >= 2:
-                        self.params = args.build[1]
-                elif args.runtests:
-                        self.params = args.runtests[1]
-                elif args.compare:
-                        self.params = args.compare[1]
+        def __init__(self):
+                if h.args.build and len(h.args.build) >= 2:
+                        self.params = h.args.build[1]
+                elif h.args.runtests:
+                        self.params = h.args.runtests[1]
+                elif h.args.compare:
+                        self.params = h.args.compare[1]
                 mList = self.params.split(' ')
                 if len(mList) >= 3:
-                        repo = mList[0]
-                        arch = mList[1]
-                        package = mList[2]
+                        h.repo = mList[0]
+                        h.arch = mList[1]
+                        h.package = mList[2]
                         del mList[2]
                         self.params = ' '.join(mList)
                 else:
                         print 'Bad input'
-                        print 'Please read help'
+                        h.argparser.print_help()
                         sys.exit(0)
-                self.db = db
-                self.args = args
 
 
 class Build_osc(OSC):
@@ -66,42 +51,45 @@ class Build_osc(OSC):
         # Class checkout and build osc package
         # TODO check repo, arch and package lists
         def start(self):
-                if repo in repo_list:
-                        if arch in arch_list:
-                                if package in package_list:
-                                        if self.args.debug:
+                if h.repo in h.repo_list:
+                        if h.arch in h.arch_list:
+                                if h.package in h.package_list:
+                                        if h.debug:
                                                 print 'Good input'
                                         self.checkout()
                                         self.build()
                                 else:
                                         print 'Wrong PACKAGE, package list:'
-                                        print package_list
-                                        print 'Please read help'
+                                        print h.package_list
+                                        h.argparser.print_help()
                                         sys.exit(0)
                         else:
                                 print 'Wrong ARCH, arch list:'
-                                print arch_list
-                                print 'Please read help'
+                                print h.arch_list
+                                h.argparser.print_help()
                                 sys.exit(0)
                 else:
                         print 'Wrong REPOSITORY, REPOSITORY list'
-                        print repo_list
-                        print 'Please read help'
+                        print h.repo_list
+                        h.argparser.print_help()
                         sys.exit(0)
 
         def checkout(self):
-                if os.path.exists(PROJECT + '/' + package):
+                if os.path.exists(h.PROJECT + '/' + h.package):
                         print "Package already exists"
-                        with cd(PROJECT + "/" + package):
-                                if not self.args.debug:
+                        with cd(h.PROJECT + "/" + h.package):
+                                if not h.debug:
                                         print "===Updating..==="
                                         subprocess.call(["osc", "update"])
                 else:
                         print "===Checkout..==="
-                        subprocess.call(["osc", "checkout", PROJECT, package])
+                        subprocess.call(["osc",
+                                        "checkout",
+                                        h.PROJECT,
+                                        h.package])
 
         def build(self):
-                with cd(PROJECT + "/" + package):
+                with cd(h.PROJECT + "/" + h.package):
                         print "===Building..==="
                         subprocess.call(["osc build " + self.params],
                                         shell=True)
@@ -112,41 +100,40 @@ class Run_tests_osc(OSC):
         # Class get osc test results
         # add new packages in the start method
         def start(self):
-                if repo in repo_list:
-                        if arch in arch_list:
-                                if package in package_list:
-                                        if(self.args.debug):
+                if h.repo in h.repo_list:
+                        if h.arch in h.arch_list:
+                                if h.package in h.package_list:
+                                        if(h.debug):
                                                 print 'Good input'
                                         self.get_results()
                                 else:
                                         print 'Wrong PACKAGE, package list:'
-                                        print package_list
-                                        print 'Please read help'
+                                        print h.package_list
+                                        h.argparser.print_help()
                                         sys.exit(0)
                         else:
                                 print 'Wrong ARCH, arch list:'
-                                print arch_list
-                                print 'Please read help'
+                                print h.arch_list
+                                h.argparser.print_help()
                                 sys.exit(0)
                 else:
                         print 'Wrong REPOSITORY, REPOSITORY list'
-                        print repo_list
-                        print 'Please read help'
+                        print h.repo_list
+                        h.argparser.print_help()
                         sys.exit(0)
 
         def get_results(self):
-                global compiler, version
-                if package == 'gcc49':
+                if h.package == 'gcc49':
                         print '===GCC 4.9 test request==='
-                        compiler = 'gcc'
-                        version = '4.9'
-                        self.db.add_textfile("/var/tmp/build-root/home/abuild"
+                        h.compiler = 'gcc'
+                        h.version = '4.9'
+                        h.db.add_textfile("/var/tmp/build-root/home/abuild"
                                                 "/rpmbuild/BUILD/gcc-4.9.0"
                                                 "/testresults"
                                                 "/test_summary.txt",
-                                                compiler)
+                                                h.compiler)
                 else:
-                        print 'No support for package ' + package
+                        print 'No support for package ' + h.package
                         print ('DIY: look at the class Run_tests_osc, '
                                'method get_results')
 
@@ -162,88 +149,90 @@ class Compare_osc(OSC):
         dates = []
         compare_type = None
 
-        def __init__(self, args, db):
-                super(Compare_osc, self).__init__(args, db)
+        def __init__(self):
+                super(Compare_osc, self).__init__()
                 self.A = None
                 self.B = None
                 self.date1 = datetime.now()
                 self.date2 = datetime.now()
-                if len(args.compare) >= 5:
-                        if args.compare[4] == "ago":
+                if len(h.args.compare) >= 5:
+                        if h.args.compare[4] == "ago":
                         # ex: -c osc 'aarch..' 2 years ago
                                 self.compare_type = 'datetime'
                                 dt = timedelta()
-                                if args.compare[3] == 'years':
+                                if h.args.compare[3] == 'years':
                                         dt = timedelta(
                                                 days=366 *
-                                                int(args.compare[2]))
-                                elif args.compare[3] == 'months':
+                                                int(h.args.compare[2]))
+                                elif h.args.compare[3] == 'months':
                                         dt = timedelta(
-                                                days=31 * int(args.compare[2]))
-                                elif  args.compare[3] == 'weeks':
+                                                days=31 * int(h.
+                                                                args.
+                                                                compare[2]))
+                                elif  h.args.compare[3] == 'weeks':
                                         dt = timedelta(
-                                                weeks=int(args.compare[2]))
-                                elif  args.compare[3] == 'days':
+                                                weeks=int(h.args.compare[2]))
+                                elif  h.args.compare[3] == 'days':
                                         dt = timedelta(
-                                                days=int(args.compare[2]))
-                                elif  args.compare[3] == 'hours':
+                                                days=int(h.args.compare[2]))
+                                elif  h.args.compare[3] == 'hours':
                                         dt = timedelta(
-                                                hours=int(args.compare[2]))
-                                elif  args.compare[3] == 'minutes':
+                                                hours=int(h.args.compare[2]))
+                                elif  h.args.compare[3] == 'minutes':
                                         dt = timedelta(
-                                                minutes=int(args.compare[2]))
+                                                minutes=int(h.args.compare[2]))
                                 else:
                                         print 'Bad input'
-                                        print 'Please read help'
+                                        h.argparser.print_help()
                                         sys.exit(0)
                                 self.date1 = datetime.now() - dt
                         else:
                                 print 'Bad input'
-                                print 'Please read help'
+                                h.argparser.print_help()
                                 sys.exit(0)
-                elif len(args.compare) >= 4:
-                        if args.compare[3] == "ago":
+                elif len(h.args.compare) >= 4:
+                        if h.args.compare[3] == "ago":
                         # ex: -c osc 'aarch..' week ago
                                 self.compare_type = 'datetime'
                                 dt = 0
-                                if args.compare[2] == 'year':
+                                if h.args.compare[2] == 'year':
                                         dt = timedelta(days=366)
-                                elif args.compare[2] == 'month':
+                                elif h.args.compare[2] == 'month':
                                         dt = timedelta(days=31)
-                                elif  args.compare[2] == 'week':
+                                elif  h.args.compare[2] == 'week':
                                         dt = timedelta(weeks=1)
-                                elif  args.compare[2] == 'day':
+                                elif  h.args.compare[2] == 'day':
                                         dt = timedelta(days=1)
-                                elif  args.compare[2] == 'hour':
+                                elif  h.args.compare[2] == 'hour':
                                         dt = timedelta(hours=1)
                                 else:
                                         print 'Bad input'
-                                        print 'Please read help'
+                                        h.argparser.print_help()
                                         sys.exit(0)
                                 self.date1 = datetime.now() - dt
                         else:  # ex: -c osc 'aarch..' 12.12.12 21.12.21
                                 self.compare_type = 'datetime'
                                 self.date1 = self.parse_datetime(
-                                        args.compare[2])
+                                        h.args.compare[2])
                                 self.date2 = self.parse_datetime(
-                                        args.compare[3])
+                                        h.args.compare[3])
 
-                elif len(args.compare) >= 3:
-                        if args.compare[2] in arch_list:
+                elif len(h.args.compare) >= 3:
+                        if h.args.compare[2] in h.arch_list:
                                 pass
-                        elif args.compare[2] in package_list:
+                        elif h.args.compare[2] in h.package_list:
                                 pass
                         else:  # ex: -c osc 'aarch..' 12.12.12
                                 self.compare_type = 'datetime'
                                 self.date1 = self.parse_datetime(
-                                        args.compare[2])
+                                        h.args.compare[2])
 
         def parse_datetime(self, date):
                 try:
                         return datetime.strptime(date, '%d.%m.%y')
                 except ValueError:
                         print 'Bad input'
-                        print 'Please read help'
+                        h.argparser.print_help()
                         sys.exit(0)
 
         def start(self):
@@ -251,7 +240,7 @@ class Compare_osc(OSC):
                 parse_gcc_list = []
                 if self.compare_type == 'datetime':
                         # TODO compiller
-                        logs = self.db.read_logs('gcc', [self.date1,
+                        logs = h.db.read_logs(h.compiler, [self.date1,
                                                         self.date2])
                         for log in logs:
                                 passfail = []

@@ -11,10 +11,7 @@ from pymongo import MongoClient
 import time
 from osc import *
 from parse import *
-
-args = None
-argparser = None
-debug = False
+import h
 
 
 def RepresentsInt(S):
@@ -30,8 +27,7 @@ class Parsing_args(object):
         #
         #  Just edit description section and add some arguments to the parser
         def parse(self):
-                global debug, argparser, args
-                argparser = argparse.ArgumentParser(
+                h.argparser = argparse.ArgumentParser(
                          formatter_class=argparse.RawDescriptionHelpFormatter,
                          description='''
                 Build utils, run tests and compare results
@@ -48,32 +44,32 @@ class Parsing_args(object):
                   -e my_collection
                   -e 100500
                                                 ''')
-                argparser.add_argument('-b', '--build', help="OSC co&build: "
+                h.argparser.add_argument('-b', '--build', help="OSC co&build: "
                                        "-b osc 'REPOSITORY "
                                        "ARCH PACKAGE [OPTS]'",
                                        nargs='+')
-                argparser.add_argument('-r', '--runtests',
+                h.argparser.add_argument('-r', '--runtests',
                                        help="Run tests: "
                                        "-r osc 'REPOSITORY ARCH PACKAGE'",
                                        nargs='+')
-                argparser.add_argument('-c', '--compare',
+                h.argparser.add_argument('-c', '--compare',
                                        help='Compare results between A and B'
                                        '(time,repo,aarch,version): '
                                        '-c PACKAGE A B',
                                        nargs='+')
-                argparser.add_argument('-p', '--parse',
+                h.argparser.add_argument('-p', '--parse',
                                        help='Parsing results: -p PACKAGE')
-                argparser.add_argument('-d', '--debug',
+                h.argparser.add_argument('-d', '--debug',
                                        help='debug',
                                        action='store_true')
-                argparser.add_argument('-e', '--erase',
+                h.argparser.add_argument('-e', '--erase',
                                        help='erase db COLLECTION')
-                args = argparser.parse_args()
-                if args.debug:
-                        debug = True
+                h.args = h.argparser.parse_args()
+                if h.args.debug:
+                        h.debug = True
                         print "===Debug==="
-                if debug:
-                        print args
+                if h.debug:
+                        print h.args
 
 
 class Build(object):
@@ -81,20 +77,20 @@ class Build(object):
         # Class chooses apropriate build type
         # add some NON osc build requests
         @staticmethod
-        def parse_args(args):
+        def parse_args():
                 ### OSC build request
-                if args.build[0] == 'osc':
+                if h.args.build[0] == 'osc':
                         print '===Osc build request..==='
-                        osc = Build_osc(args, db)
+                        osc = Build_osc()
                         osc.start()
                 else:
                         print 'Bad input'
-                        print 'Please read help'
+                        h.argparser.print_help()
                         sys.exit(0)
 
-                if debug:
+                if h.debug:
                         print 'build args:'
-                        print args.build
+                        print h.args.build
 
 
 class Run_tests(object):
@@ -102,20 +98,20 @@ class Run_tests(object):
         # Class runs apropriate tests
         # add some NON osc run tests requests
         @staticmethod
-        def parse_args(args):
+        def parse_args():
                 ### OSC run tests request
-                if args.runtests[0] == 'osc':
+                if h.args.runtests[0] == 'osc':
                         print '===Osc run tests request..==='
-                        osc = Run_tests_osc(args, db)
+                        osc = Run_tests_osc()
                         osc.start()
                 else:
                         print 'Bad input'
-                        print 'Please read help'
+                        h.argparser.print_help()
                         sys.exit(0)
 
-                if debug:
+                if h.debug:
                         print 'runtests args: '
-                        print args.runtests
+                        print h.args.runtests
 
 
 class Parse(object):
@@ -126,18 +122,18 @@ class Parse(object):
         #
 
         @staticmethod
-        def parse_args(args):
-                if args.parse == 'gcc':
+        def parse_args():
+                if h.args.parse == 'gcc':
                         print '===GCC parse request==='
                         # TODO
                 else:
                         print 'Bad input'
-                        print 'Please read help'
+                        h.argparser.print_help()
                         sys.exit(0)
 
-                if args.debug:
+                if h.debug:
                         print 'parse agrs'
-                        print args.parse
+                        print h.args.parse
 
 
 class MongoHQ(object):
@@ -165,13 +161,13 @@ class MongoHQ(object):
                 text_file_doc = {"filename": path,
                                  "contents": text,
                                  "date": datetime.now(),
-                                 'repo': repo,
-                                 'aarch': arch,
-                                 'package': package,
-                                 'compiler': compiler,
-                                 'version': version}
+                                 'repo': h.repo,
+                                 'aarch': h.arch,
+                                 'package': h.package,
+                                 'compiler': h.compiler,
+                                 'version': h.version}
                 collection.insert(text_file_doc)
-                if debug:  # shows last uploaded doc
+                if h.debug:  # shows last uploaded doc
                         print collection.find().sort('date', -1).limit(1)[0]
 
         def read_logs(self, collection, params=None):
@@ -203,18 +199,18 @@ class MongoHQ(object):
                 self.erase()
 
         def erase(self):
-                if args.erase:
-                        if RepresentsInt(args.erase):
+                if h.args.erase:
+                        if RepresentsInt(h.args.erase):
                                 pass
                         else:
-                                if args.erase in db.collection_list():
+                                if h.args.erase in db.collection_list():
                                         print ("Collection  %s"
                                                 " will be deleted after "
                                                 "5 seconds.."
                                                 "press Ctrl + C to interrupt" %
-                                                args.erase)
+                                                h.args.erase)
                                         time.sleep(5)
-                                        self.db.drop_collection(args.erase)
+                                        self.db.drop_collection(h.args.erase)
                                 else:
                                         print "Wrong collection"
                                 print db.collection_list()
@@ -225,32 +221,32 @@ class Compare(object):
         #
         #
         @staticmethod
-        def parse_args(args):
+        def parse_args():
                 ### OSC compare request
-                if args.compare[0] == 'osc':
+                if h.args.compare[0] == 'osc':
                         print '===Osc compare request..==='
-                        osc = Compare_osc(args, db)
+                        osc = Compare_osc()
                         osc.start()
                 else:
                         print 'Bad input'
-                        print 'Please read help'
+                        h.argparser.print_help()
                         sys.exit(0)
 
-                if debug:
+                if h.debug:
                         print 'compare args: '
-                        print args.compare
+                        print h.args.compare
 
 if __name__ == "__main__":
         parsing_args = Parsing_args()
         parsing_args.parse()
-        db = MongoHQ()
-        db.operations()
-        if args.build:
-                Build.parse_args(args)
-        if args.runtests:
-                Run_tests.parse_args(args)
-        if args.parse:
-                Parse.parse_args(args)
-        if args.compare:
-                Compare.parse_args(args)
+        h.db = MongoHQ()
+        h.db.operations()
+        if h.args.build:
+                Build.parse_args()
+        if h.args.runtests:
+                Run_tests.parse_args()
+        if h.args.parse:
+                Parse.parse_args()
+        if h.args.compare:
+                Compare.parse_args()
         print '====finish==='
