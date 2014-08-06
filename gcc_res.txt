@@ -1,4 +1,0 @@
-===== RESULTS ======
-gcc_success: 1000
-gcc_fail: 22
-gcc_unapplicable: 30
