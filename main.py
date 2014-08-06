@@ -147,7 +147,8 @@ class MongoHQ(object):
         db = None
 
         def __init__(self):
-                MONGO_URL = os.environ.get('MONGOHQ_URL')
+                MONGO_URL = ('mongodb://'
+                        'q9957789:qw12we23@kahana.mongohq.com:10013/ssdb')
                 client = MongoClient(MONGO_URL)
                 self.db = client.ssdb
 

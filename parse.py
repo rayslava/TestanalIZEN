@@ -6,10 +6,25 @@ import random
 from threading import Thread
 
 
-class Parse_gcc(Thread):
-        ## TODO
-        #
-        #
+class Parse(object):
+        contents = None
+        date = None
+
+        def __init__(self, log):
+                self.contents = log[0]
+                self.date = log[1]
+
+        def start(self):
+                pass
+
+        def show(self):
+                pass
+
+        def get(self):
+                pass
+
+
+class Parse_gcc(Thread, Parse):
         pass_cnt = 0
         xpass_cnt = 0
         fail_cnt = 0
