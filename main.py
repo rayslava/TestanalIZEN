@@ -165,7 +165,8 @@ class MongoHQ(object):
                                  'aarch': h.arch,
                                  'package': h.package,
                                  'compiler': h.compiler,
-                                 'version': h.version}
+                                 'version': h.version,
+                                 'revision': h.revision}
                 collection.insert(text_file_doc)
                 if h.debug:  # shows last uploaded doc
                         print collection.find().sort('date', -1).limit(1)[0]

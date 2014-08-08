@@ -90,6 +90,14 @@ class Build_osc(OSC):
 
         def build(self):
                 with cd(h.PROJECT + "/" + h.package):
+                        print "===Revision==="
+                        parse_pexpect = Parse_pexpect()
+                        parse_pexpect.before("osc getbinaries aarch",
+                                                ".rpm",
+                                                "(?:-(\d.)*\d+-)(\d+)",
+                                                group=2)
+                        h.revision = parse_pexpect.get()
+                        print h.revision
                         print "===Building..==="
                         subprocess.call(["osc build " + self.params],
                                         shell=True)

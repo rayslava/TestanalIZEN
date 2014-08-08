@@ -4,13 +4,17 @@ import re
 import sys
 import random
 from threading import Thread
+import pexpect
+import h
 
 
 class Parse(object):
         contents = None
         date = None
+        result = None
 
-        def __init__(self, log):
+        def __init__(self, log=[[], []]):
+                self.result = None
                 self.contents = log[0]
                 self.date = log[1]
 
@@ -21,7 +25,30 @@ class Parse(object):
                 pass
 
         def get(self):
-                pass
+                return self.result
+
+
+class Parse_pexpect(Parse):
+        def __init__(self):
+                super(Parse_pexpect, self).__init__()
+
+        def before(self, cmd, expect, regex, group=0):
+                child = pexpect.spawn(cmd)
+                child.expect(expect)
+                string = child.before
+                if (h.debug):
+                        print string
+                regex = re.compile(regex)
+                match = regex.search(string)
+                if match:
+                        if (h.debug):
+                                print match.group(group)
+                        self.result = match.group(group)
+                else:
+                        pass  # print 'wtf'# Match attempt failed
+
+        def show(self):
+                print self.result
 
 
 class Parse_gcc(Thread, Parse):
