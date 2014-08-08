@@ -32,10 +32,13 @@ class Parse_pexpect(Parse):
         def __init__(self):
                 super(Parse_pexpect, self).__init__()
 
-        def before(self, cmd, expect, regex, group=0):
+        def start(self, cmd, expect, part, regex, group=0):
                 child = pexpect.spawn(cmd)
                 child.expect(expect)
-                string = child.before
+                if part is 'before':
+                        string = child.before
+                else:
+                        string = child.after
                 if (h.debug):
                         print string
                 regex = re.compile(regex)

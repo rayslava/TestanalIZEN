@@ -92,10 +92,10 @@ class Build_osc(OSC):
                 with cd(h.PROJECT + "/" + h.package):
                         print "===Revision==="
                         parse_pexpect = Parse_pexpect()
-                        parse_pexpect.before("osc getbinaries aarch",
-                                                ".rpm",
-                                                "(?:-(\d.)*\d+-)(\d+)",
-                                                group=2)
+                        parse_pexpect.start("osc update",
+                                                "At revision \d+",
+                                                'after',
+                                                "\d+")
                         h.revision = parse_pexpect.get()
                         print h.revision
                         print "===Building..==="
