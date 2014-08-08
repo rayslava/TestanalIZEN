@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import os
 import subprocess
 import h
+from threading import Thread
 
 
 @contextlib.contextmanager
@@ -139,7 +140,7 @@ class Run_tests_osc(OSC):
                                                 "/rpmbuild/BUILD/gcc-4.9.0"
                                                 "/testresults"
                                                 "/test_summary.txt",
-                                                h.compiler)
+                                                h.package)
                 else:
                         print 'No support for package ' + h.package
                         print ('DIY: look at the class Run_tests_osc, '
@@ -246,18 +247,23 @@ class Compare_osc(OSC):
         def start(self):
                 passfail_mass = []
                 parse_gcc_list = []
+                thread_list = []
+                passfail = []
                 if self.compare_type == 'datetime':
-                        # TODO compiller
-                        logs = h.db.read_logs(h.compiler, [self.date1,
+                        logs = h.db.read_logs(h.package, [self.date1,
                                                         self.date2])
+                        print 'start..'
                         for log in logs:
                                 passfail = []
                                 self.dates.append(log[1])
                                 parse_gcc = Parse_gcc(log)
-                                parse_gcc.start()
                                 parse_gcc_list.append(parse_gcc)
+                                thread_ = Thread(target=parse_gcc.start)
+                                thread_.start()
+                                thread_list.append(thread_)
+                        for thread_ in thread_list:
+                                thread_.join()
                         for parse_gcc in parse_gcc_list:
-                                parse_gcc.join()
                                 parse_gcc.show()
                                 passfail = parse_gcc.get()
                                 passfail_mass.append(passfail)

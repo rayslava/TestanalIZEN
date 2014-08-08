@@ -1,14 +1,8 @@
 #!/usr/bin/env python
 
 import sys
-import contextlib
-import os
 import argparse
-import subprocess
-import re
-from datetime import datetime, timedelta
 from pymongo import MongoClient
-import time
 from osc import *
 from parse import *
 import h
