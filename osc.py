@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 from datetime import datetime, timedelta
-from parse import *
+from parse import Parse_gcc, Parse_pexpect
 import contextlib
 import sys
 import matplotlib.pyplot as plt
@@ -254,9 +254,8 @@ class Compare_osc(OSC):
                 try:
                         return datetime.strptime(date, '%d.%m.%y')
                 except ValueError:
-                        print 'Bad input'
                         h.argparser.print_help()
-                        sys.exit(0)
+                        raise 'Bad input'
 
         def start(self):
                 passfail_mass = []

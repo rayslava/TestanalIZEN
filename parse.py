@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import re
-import sys
 import random
-from threading import Thread
 import pexpect
 import h
 
@@ -55,13 +53,6 @@ class Parse_pexpect(Parse):
 
 
 class Parse_gcc(Parse):
-        pass_cnt = 0
-        xpass_cnt = 0
-        fail_cnt = 0
-        xfail_cnt = 0
-        unsupported_cnt = 0
-        unresolved_cnt = 0
-
         def __init__(self, log):
                 #Thread.__init__(self)
                 super(Parse_gcc, self).__init__(log)
