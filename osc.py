@@ -39,8 +39,17 @@ class OSC(object):
                         h.repo = mList[0]
                         h.arch = mList[1]
                         h.package = mList[2]
+                        h.spec = h.package + '.spec'
+                        if h.package == 'llvm':
+                                h.PROJECT = h.PROJECT_LIST[0]
                         del mList[2]
                         self.params = ' '.join(mList)
+                        if h.debug:
+                                print (h.repo,
+                                        h.arch,
+                                        h.package,
+                                        h.spec,
+                                        h.PROJECT)
                 else:
                         print 'Bad input'
                         h.argparser.print_help()
@@ -100,7 +109,12 @@ class Build_osc(OSC):
                         h.revision = parse_pexpect.get()
                         print h.revision
                         print "===Building..==="
-                        subprocess.call(["osc build " + self.params],
+                        if h.debug:
+                                print ("osc build {0} {1}"
+                                                .format(self.params, h.spec))
+                                subprocess.call("pwd")
+                        subprocess.call(("osc build {0} {1}"
+                                                .format(self.params, h.spec)),
                                         shell=True)
 
 
